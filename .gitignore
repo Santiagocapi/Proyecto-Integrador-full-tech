@@ -1,0 +1,11 @@
+node_modules/
+dist/
+converage/
+.env
+.env.*
+!.env.example
+.env.local
+*.log
+.DS_Store
+.vscode/
+!.vscode/settings.json
