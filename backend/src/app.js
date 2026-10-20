@@ -4,9 +4,11 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import { env } from './config/env.js'
 import { notFound, errorHandler } from './middlewares/error-handler.js'
+import authRoutes from './routes/auth.routes.js'
 
 export const app = express()
 
+app.use('/api/auth', authRoutes)
 app.use(helmet())
 app.use(cors({ origin: env.CORS_ORIGIN.split(',') }))
 app.use(express.json())
