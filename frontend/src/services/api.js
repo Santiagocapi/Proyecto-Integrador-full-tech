@@ -21,11 +21,11 @@ async function request(method, path, { body, auth = false } = {}) {
 
   let res
   try {
-    res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    })
+    const options = { method, headers }
+    if (body !== undefined) {
+      options.body = JSON.stringify(body)
+    }
+    res = await fetch(`${BASE_URL}${path}`, options)
   } catch {
     throw new ApiError(0, 'No se pudo conectar con el servidor')
   }
