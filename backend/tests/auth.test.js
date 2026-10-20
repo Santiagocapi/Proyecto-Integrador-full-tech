@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
-import app from '../src/app.js'
+import { app } from '../src/app.js'
 import { requireAuth, requireRole } from '../src/middlewares/auth.js'
 import { supabase } from '../src/config/supabase.js'
 
@@ -26,7 +26,7 @@ describe('Auth Endpoints y Middlewares', () => {
   it('responde 400 si los datos de registro son inválidos', async () => {
     const res = await request(app).post('/api/auth/register').send({
       email: 'correo-invalido',
-      password: '123', // sin mayúscula ni 8 caracteres
+      password: '123',
       full_name: 'R'
     })
 
@@ -55,7 +55,8 @@ describe('Auth Endpoints y Middlewares', () => {
     const res = await request(app).post('/api/auth/register').send({
       email: 'rocio@test.com',
       password: 'Password123',
-      full_name: 'Rocio Lucero'
+      full_name: 'Rocio Lucero',
+      phone: '+5492604123456'
     })
 
     expect(res.status).toBe(201)
@@ -71,7 +72,8 @@ describe('Auth Endpoints y Middlewares', () => {
     const res = await request(app).post('/api/auth/register').send({
       email: 'duplicado@test.com',
       password: 'Password123',
-      full_name: 'Rocio Lucero'
+      full_name: 'Rocio Lucero',
+      phone: '+5492604123456'
     })
 
     expect(res.status).toBe(409)
@@ -99,7 +101,6 @@ describe('Auth Endpoints y Middlewares', () => {
       })
     })
 
-    // App de prueba con ruta protegida por requireRole('admin')
     const testApp = express()
     testApp.get('/admin-test', requireAuth, requireRole('admin'), (req, res) => {
       res.status(200).json({ ok: true })

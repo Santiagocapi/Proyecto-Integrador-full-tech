@@ -8,7 +8,6 @@ import authRoutes from './routes/auth.routes.js'
 
 export const app = express()
 
-app.use('/api/auth', authRoutes)
 app.use(helmet())
 app.use(cors({ origin: env.CORS_ORIGIN.split(',') }))
 app.use(express.json())
@@ -20,6 +19,6 @@ app.get('/api/health', (req, res) => {
 
 // Acá se montan las rutas de cada módulo, por ejemplo:
 // app.use('/api/products', productsRoutes)
-
+app.use('/api/auth', authRoutes)
 app.use(notFound)
 app.use(errorHandler)
