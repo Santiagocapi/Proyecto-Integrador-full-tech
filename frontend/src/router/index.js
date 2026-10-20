@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 // Rutas de la aplicación, incluyendo las rutas de administración y sus hijos. Cada ruta tiene un meta que indica si requiere autenticación, si es solo para invitados o si requiere permisos de administrador.
