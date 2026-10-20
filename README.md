@@ -1,10 +1,10 @@
 FULLTECH
 
-*** Ctrl C Ctrl V 404 Not Found ***
+# Ctrl C Ctrl V 404 Not Found 
 
 Proyecto Integrador para la materia Programaciòn IV de la Tecnicatura en Programacion
 
-*** Integrante ***
+# Integrante 
 
 * Aymar Stéfano
 * Capitani Santiago
