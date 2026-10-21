@@ -47,10 +47,20 @@ button {
 a {
   color: var(--color-cyan);
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 a:hover {
-  text-decoration: underline;
+  color: var(--color-cyan-hover);
+}
+
+::placeholder {
+  color: var(--color-text-muted);
+}
+
+::selection {
+  background-color: var(--color-cyan);
+  color: var(--color-text-on-accent);
 }
 
 ul,
@@ -109,7 +119,7 @@ p {
 
 @media (min-width: 768px) {
   .container {
-    padding-inline: var(--space-6);
+    padding-inline: var(--space-5);
   }
 }
 
@@ -167,6 +177,59 @@ p {
 
 .text-center {
   text-align: center;
+}
+
+/* Encabezado de sección: "Starter Packs destacados" con la primera parte en neón */
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section-title {
+  font-size: var(--text-2xl);
+}
+
+.accent-cyan {
+  color: var(--color-cyan);
+}
+
+.accent-magenta {
+  color: var(--color-magenta);
+}
+
+.text-glow {
+  text-shadow: var(--text-glow-cyan);
+}
+
+/* Tarjeta base: superficie oscura con glow cyan al pasar el mouse */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition:
+    box-shadow var(--transition-base),
+    border-color var(--transition-base),
+    transform var(--transition-base);
+}
+
+.card:hover {
+  border-color: var(--color-cyan);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-2px);
+}
+
+/* Fila con scroll horizontal (carruseles en celular) */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 /* Texto solo para lectores de pantalla */
