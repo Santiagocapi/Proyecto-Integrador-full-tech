@@ -43,9 +43,9 @@ const products = [
 </script>
 
 <template>
-  <main class="container section">
+  <div class="container section">
     <div class="grid-products">
       <ProductCard v-for="product in products" :key="product.slug" :product="product" />
     </div>
-  </main>
+  </div>
 </template>
