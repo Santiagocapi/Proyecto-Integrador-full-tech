@@ -6,9 +6,6 @@ CREATE INDEX idx_products_category_id
 CREATE INDEX idx_products_price
     ON public.products(price);
 
-CREATE INDEX idx_products_slug
-    ON public.products(slug);
-
 -- 2. Índice para búsqueda de texto por nombre
 CREATE INDEX idx_products_name_search
     ON public.products
