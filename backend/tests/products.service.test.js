@@ -101,4 +101,34 @@ describe('Servicio de productos con transporte simulado', () => {
     expect(requestedUrl(1).pathname).toBe('/rest/v1/bundle_items')
     expect(requestedUrl(1).searchParams.get('bundle_id')).toBe('eq.7')
   })
+
+  it('devuelve una página vacía conservando el total y la página solicitada', async () => {
+    respond([], { count: 21 })
+    const result = await productsService.list({ page: 4, limit: 10 })
+    expect(result).toEqual({ items: [], total: 21, page: 4, pages: 3 })
+  })
+
+  it('devuelve cero páginas cuando el catálogo no tiene coincidencias', async () => {
+    respond([])
+    expect(await productsService.list({})).toEqual({ items: [], total: 0, page: 1, pages: 0 })
+  })
+
+  it('no consulta componentes para un producto común y conserva sus variantes', async () => {
+    const product = { id: 3, is_bundle: false, product_variants: [{ id: 4, stock: 0 }] }
+    respond(product)
+    expect(await productsService.getBySlug('aro')).toEqual({ ...product, bundle_items: [] })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('no convierte un error de permisos del detalle en un producto inexistente', async () => {
+    respond({ code: '42501', message: 'permission denied for table products' }, { status: 403 })
+    await expect(productsService.getBySlug('kit')).rejects.toMatchObject({ code: '42501' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('rechaza el detalle completo si no puede leer los componentes del pack', async () => {
+    respond({ id: 7, is_bundle: true })
+    respond({ code: '42501', message: 'permission denied for table bundle_items' }, { status: 403 })
+    await expect(productsService.getBySlug('kit')).rejects.toMatchObject({ code: '42501' })
+  })
 })

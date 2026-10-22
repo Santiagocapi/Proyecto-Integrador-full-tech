@@ -155,11 +155,13 @@ Las consultas manuales requieren el servidor de la Consola 1 y datos reales con
 slugs existentes. Comprobar también filtros individuales, ausencia de resultados,
 una página fuera de rango, una query inválida y un producto inexistente.
 
-La suite actual tiene 25 tests: salud, categorías, listado paginado, filtros,
+La suite actual tiene 31 tests: salud, categorías, listado paginado, filtros,
 validaciones, detalle, producto inexistente y construcción de solicitudes del servicio.
 Los tests HTTP sustituyen los servicios por mocks. Los tests del servicio usan el
 cliente real de Supabase con un transporte HTTP simulado para comprobar filtros,
 paginación, búsqueda con caracteres reservados, errores y componentes de Starter Packs.
+También cubren páginas vacías, productos sin componentes, fallos de permisos en
+detalle y packs, y la respuesta HTTP genérica ante errores internos de categorías.
 No ejecutan SQL ni validan relaciones o permisos de la base real.
 Las pruebas reales de categorías, filtros, variantes y Starter Packs quedan
 pendientes hasta corregir los permisos de Supabase.
