@@ -4,6 +4,8 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import { env } from './config/env.js'
 import { notFound, errorHandler } from './middlewares/error-handler.js'
+import categoriesRoutes from './routes/categories.routes.js'
+import productsRoutes from './routes/products.routes.js'
 
 export const app = express()
 
@@ -18,6 +20,9 @@ app.get('/api/health', (req, res) => {
 
 // Acá se montan las rutas de cada módulo, por ejemplo:
 // app.use('/api/products', productsRoutes)
+
+app.use('/api/categories', categoriesRoutes)
+app.use('/api/products', productsRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
