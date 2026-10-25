@@ -83,6 +83,14 @@ export const productsService = {
 
     const { data, error, count } = await query
 
+    if (error?.code === 'PGRST103') {
+      // PostgREST devuelve 416 si el offset supera los resultados disponibles.
+      // Recuperar el total con los mismos filtros desde la primera posición.
+      const { count: total, error: countError } = await query.range(0, 0)
+      if (countError) throw countError
+      return { items: [], total: total ?? 0, page, pages: Math.ceil((total ?? 0) / limit) }
+    }
+
     if (error) {
       throw error
     }

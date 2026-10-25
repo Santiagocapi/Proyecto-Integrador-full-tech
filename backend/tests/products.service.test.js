@@ -103,9 +103,27 @@ describe('Servicio de productos con transporte simulado', () => {
   })
 
   it('devuelve una página vacía conservando el total y la página solicitada', async () => {
-    respond([], { count: 21 })
+    respond({ code: 'PGRST103', message: 'Requested range not satisfiable' }, { status: 416 })
+    respond([{ id: 1 }], { count: 21 })
     const result = await productsService.list({ page: 4, limit: 10 })
     expect(result).toEqual({ items: [], total: 21, page: 4, pages: 3 })
+    expect(requestedUrl(1).searchParams.get('offset')).toBe('0')
+    expect(requestedUrl(1).searchParams.get('limit')).toBe('1')
+  })
+
+  it('devuelve una página vacía al pedir la segunda página de un catálogo vacío', async () => {
+    respond({ code: 'PGRST103', message: 'Requested range not satisfiable' }, { status: 416 })
+    respond([])
+    const result = await productsService.list({ page: 2, category: 'iluminacion' })
+    expect(result).toEqual({ items: [], total: 0, page: 2, pages: 0 })
+    expect(requestedUrl(1).searchParams.get('categories.slug')).toBe('eq.iluminacion')
+    expect(requestedUrl(1).searchParams.get('active')).toBe('eq.true')
+  })
+
+  it('propaga errores si falla recuperar el total de una página fuera de rango', async () => {
+    respond({ code: 'PGRST103', message: 'Requested range not satisfiable' }, { status: 416 })
+    respond({ code: '42501', message: 'permission denied' }, { status: 403 })
+    await expect(productsService.list({ page: 2 })).rejects.toMatchObject({ code: '42501' })
   })
 
   it('devuelve cero páginas cuando el catálogo no tiene coincidencias', async () => {

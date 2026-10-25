@@ -155,7 +155,7 @@ Las consultas manuales requieren el servidor de la Consola 1 y datos reales con
 slugs existentes. Comprobar también filtros individuales, ausencia de resultados,
 una página fuera de rango, una query inválida y un producto inexistente.
 
-La suite actual tiene 31 tests: salud, categorías, listado paginado, filtros,
+La suite actual tiene 33 tests: salud, categorías, listado paginado, filtros,
 validaciones, detalle, producto inexistente y construcción de solicitudes del servicio.
 Los tests HTTP sustituyen los servicios por mocks. Los tests del servicio usan el
 cliente real de Supabase con un transporte HTTP simulado para comprobar filtros,
@@ -163,11 +163,22 @@ paginación, búsqueda con caracteres reservados, errores y componentes de Start
 También cubren páginas vacías, productos sin componentes, fallos de permisos en
 detalle y packs, y la respuesta HTTP genérica ante errores internos de categorías.
 No ejecutan SQL ni validan relaciones o permisos de la base real.
-Las pruebas reales de categorías, filtros, variantes y Starter Packs quedan
-pendientes hasta corregir los permisos de Supabase.
+El 24/10/2026 se aplicó `007_permisos.sql` desde el SQL Editor de Supabase.
+Después se cargó el `supabase/seed.sql` del equipo desde `feat/db-seed`:
+4 categorías y 20 productos con variantes, incluidos dos Starter Packs.
+Se completaron 14 comprobaciones de lectura contra la base real: categorías
+ordenadas; dos páginas sin productos repetidos; página fuera de rango; categoría;
+rango de precios; conexión sin distinguir mayúsculas; compatibilidad; búsqueda
+en nombre y descripción; filtros combinados; los tres órdenes con desempate;
+búsqueda con caracteres reservados; detalle con variante y stock; ambos packs
+con tres componentes cada uno; y respuestas 404 y 400.
+Una página fuera de rango puede producir `PGRST103` en PostgREST: el servicio
+recupera el total desde la primera posición con los mismos filtros y devuelve `items: []`.
 
 ## Límites actuales para la revisión
 
 - `%`, `_` y el alias `*` de PostgREST funcionan como comodines en las búsquedas
   `ILIKE`; no se garantiza una búsqueda literal de esos caracteres.
-- Falta confirmar la búsqueda y los componentes de Starter Packs contra Supabase real.
+- No se probaron escrituras en la base: los endpoints de administración y sus
+  permisos corresponden a otra etapa. Tampoco se alteraron productos para probar
+  su estado inactivo en la base compartida.
