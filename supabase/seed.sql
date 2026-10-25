@@ -182,12 +182,7 @@ ON CONFLICT (sku) DO UPDATE SET
   stock = EXCLUDED.stock;
 
 -- 4) Relación entre kits y sus productos componentes.
--- Se reemplazan solo las relaciones de estos dos kits para mantener el seed repetible.
-DELETE FROM public.bundle_items bi
-USING public.products b
-WHERE bi.bundle_id = b.id
-  AND b.slug IN ('kit-mi-primer-stream', 'kit-creador-mobile');
-
+-- Inserta o actualiza las relaciones sin borrar las existentes.
 INSERT INTO public.bundle_items (bundle_id, product_id, quantity)
 SELECT kit.id, component.id, 1
 FROM (
