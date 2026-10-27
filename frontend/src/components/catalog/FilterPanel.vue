@@ -8,8 +8,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'close', 'clear'])
 
-const CONNECTIONS = ['USB', 'USB-C', 'XLR', 'Lightning', 'Inalámbrico']
-const COMPAT = ['PC', 'iPhone', 'Android']
+const CONNECTIONS = ['USB', 'USB-C', 'USB/XLR', 'Lightning', 'Inalámbrico', 'Mecánica']
+const COMPAT = ['PC', 'Mac', 'iPhone con Lightning', 'Android USB-C', 'Smartphone']
 
 const categories = ref([])
 onMounted(async () => {

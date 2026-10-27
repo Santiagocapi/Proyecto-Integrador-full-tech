@@ -30,6 +30,7 @@ function reset() {
 // Debounce: esperamos 300 ms sin escribir antes de pedir sugerencias
 watch(query, (value) => {
   clearTimeout(timer)
+  reset()
   const term = value.trim()
   if (term.length < MIN_CHARS) return reset()
   timer = setTimeout(() => fetchSuggestions(term), DEBOUNCE_MS)
@@ -94,7 +95,14 @@ function finalPrice(p) {
   return offer > 0 && offer < Number(p.price) ? p.offer_price : p.price
 }
 
-onBeforeUnmount(() => clearTimeout(timer))
+watch(() => route.query.q, (value) => {
+  query.value = typeof value === 'string' ? value : ''
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(timer)
+  reset()
+})
 </script>
 
 <template>

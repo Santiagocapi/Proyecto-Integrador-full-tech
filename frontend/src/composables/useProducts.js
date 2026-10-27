@@ -15,6 +15,8 @@ export function useProducts(filters, { limit = 12 } = {}) {
   const error = ref(null)
 
   let lastRequest = 0 // evita que una respuesta vieja pise a una más nueva
+  const loadedPages = new Map()
+  let filterKey = ''
 
   function buildQuery(f) {
     const params = new URLSearchParams()
@@ -33,12 +35,21 @@ export function useProducts(filters, { limit = 12 } = {}) {
   async function fetchProducts() {
     const id = ++lastRequest
     const f = toValue(filters)
+    const key = JSON.stringify({ ...f, page: undefined })
+    if (key !== filterKey) {
+      filterKey = key
+      loadedPages.clear()
+      products.value = []
+    }
     loading.value = true
     error.value = null
     try {
       const data = await api.get(`/products?${buildQuery(f)}`)
       if (id !== lastRequest) return
-      products.value = f.page > 1 ? [...products.value, ...data.items] : data.items
+      loadedPages.set(Number(f.page || 1), data.items)
+      products.value = [...loadedPages.entries()]
+        .sort(([a], [b]) => a - b)
+        .flatMap(([, items]) => items)
       total.value = data.total
       pages.value = data.pages
     } catch (e) {
