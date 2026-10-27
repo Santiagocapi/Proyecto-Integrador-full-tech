@@ -76,9 +76,34 @@ describe('Migración 008 en PostgreSQL local aislado', () => {
   })
   it('conserva variantes omitidas y sus referencias', async () => {
     const product = await save(null, payload('conserva', 'CONSERVA-1'))
+    await db.exec(
+      'CREATE TABLE test_order_refs (variant_id BIGINT REFERENCES product_variants(id))',
+    )
+    await db.query('INSERT INTO test_order_refs VALUES ($1)', [product.product_variants[0].id])
     const updated = await save(product.id, payload('conserva', 'CONSERVA-2'))
     expect(updated.product_variants).toHaveLength(2)
     expect(updated.product_variants[0].id).toBe(product.product_variants[0].id)
+    expect(
+      (
+        await db.query(
+          'SELECT * FROM test_order_refs r JOIN product_variants v ON v.id=r.variant_id',
+        )
+      ).rows,
+    ).toHaveLength(1)
+  })
+  it('conserva componentes de un pack y rechaza convertirlo a producto común', async () => {
+    const component = await save(null, payload('componente', 'COMPONENTE'))
+    const body = { ...payload('pack', 'PACK'), is_bundle: true }
+    const pack = await save(null, body)
+    await db.query('INSERT INTO bundle_items VALUES ($1,$2,1)', [pack.id, component.id])
+    body.variants[0].id = pack.product_variants[0].id
+    await save(pack.id, body)
+    await expect(save(pack.id, { ...body, is_bundle: false })).rejects.toMatchObject({
+      code: '22023',
+    })
+    expect(
+      (await db.query('SELECT * FROM bundle_items WHERE bundle_id=$1', [pack.id])).rows,
+    ).toHaveLength(1)
   })
   it('rechaza variantes ajenas y conserva el producto', async () => {
     const one = await save(null, payload('uno', 'UNO'))
