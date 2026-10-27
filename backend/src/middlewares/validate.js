@@ -14,8 +14,16 @@ export const validate = (schema, source = 'body') => {
       })
     }
 
-    // Guardamos los datos ya limpios y transformados por Zod
-    req[source] = result.data
+    // En Express 5, req.query y req.params no tienen setter, por lo que no se pueden reasignar directamente.
+    if (source === 'body') {
+      req.body = result.data
+    } else {
+      // Guardamos el resultado validado en propiedades dedicadas de la petición
+      req.validated = result.data
+      if (source === 'query') req.validatedQuery = result.data
+      if (source === 'params') req.validatedParams = result.data
+    }
+
     next()
   }
 }
