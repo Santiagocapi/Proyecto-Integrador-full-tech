@@ -12,12 +12,21 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isLoggedIn: (state) => Boolean(state.user),
-    isAdmin: (state) => state.profile?.role === 'admin',
+    // Exigimos sesión activa además de que el rol sea admin
+    isAdmin: (state) => Boolean(state.user) && state.profile?.role === 'admin',
   },
   actions: {
     async fetchProfile() {
       try {
-        this.profile = await api.get('/auth/me', { auth: true })
+        const profileData = await api.get('/auth/me', { auth: true })
+        
+        // Si el usuario cerró sesión mientras la petición estaba en curso, descartamos el resultado
+        if (!this.user) {
+          this.profile = null
+          return
+        }
+        
+        this.profile = profileData
       } catch {
         this.profile = null
       }
