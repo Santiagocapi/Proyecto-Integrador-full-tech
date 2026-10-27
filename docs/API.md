@@ -175,10 +175,16 @@ con tres componentes cada uno; y respuestas 404 y 400.
 Una página fuera de rango puede producir `PGRST103` en PostgREST: el servicio
 recupera el total desde la primera posición con los mismos filtros y devuelve `items: []`.
 
+## Administración
+
+La API de administración, sus requisitos y las pruebas locales se documentan en
+[ADMIN_API.md](./ADMIN_API.md). La migración 008 aún requiere revisión y aplicación
+en la base compartida antes de probar altas y ediciones reales.
+
 ## Límites actuales para la revisión
 
 - `%`, `_` y el alias `*` de PostgREST funcionan como comodines en las búsquedas
   `ILIKE`; no se garantiza una búsqueda literal de esos caracteres.
-- No se probaron escrituras en la base: los endpoints de administración y sus
-  permisos corresponden a otra etapa. Tampoco se alteraron productos para probar
-  su estado inactivo en la base compartida.
+- No se probaron escrituras en Supabase compartido. La administración se verificó
+  con servicios simulados y PostgreSQL local aislado; no se alteraron productos
+  del equipo para probar su estado inactivo.
