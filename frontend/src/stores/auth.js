@@ -9,26 +9,29 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     profile: null,
+    profileRequest: 0,
   }),
   getters: {
     isLoggedIn: (state) => Boolean(state.user),
     // Exigimos sesión activa además de que el rol sea admin
-    isAdmin: (state) => Boolean(state.user) && state.profile?.role === 'admin',
+    isAdmin: (state) =>
+      Boolean(state.user) && state.profile?.id === state.user.id && state.profile?.role === 'admin',
   },
   actions: {
     async fetchProfile() {
+      const userId = this.user?.id
+      const requestId = ++this.profileRequest
+      this.profile = null
+      if (!userId) return
       try {
         const profileData = await api.get('/auth/me', { auth: true })
-        
+
         // Si el usuario cerró sesión mientras la petición estaba en curso, descartamos el resultado
-        if (!this.user) {
-          this.profile = null
-          return
-        }
-        
-        this.profile = profileData
+        if (requestId !== this.profileRequest || this.user?.id !== userId) return
+
+        this.profile = profileData?.id === userId ? profileData : null
       } catch {
-        this.profile = null
+        if (requestId === this.profileRequest && this.user?.id === userId) this.profile = null
       }
     },
 
@@ -46,10 +49,15 @@ export const useAuthStore = defineStore('auth', {
         }
 
         if (!authSubscription) {
-          const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+          const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
             this.user = session?.user ?? null
+            this.profile = null
+            ++this.profileRequest
             if (this.user) {
-              await this.fetchProfile()
+              // La consulta espera a que Supabase libere el bloqueo de sesión.
+              setTimeout(() => {
+                if (this.user) void this.fetchProfile()
+              }, 0)
             } else {
               this.profile = null
             }
@@ -82,9 +90,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      await supabase.auth.signOut()
       this.user = null
       this.profile = null
+      ++this.profileRequest
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
     },
   },
 })
