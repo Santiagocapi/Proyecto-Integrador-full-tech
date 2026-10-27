@@ -5,12 +5,12 @@ export const validate = (schema, source = 'body') => {
     if (!result.success) {
       const details = result.error.issues.map((issue) => ({
         field: issue.path.join('.'),
-        message: issue.message
+        message: issue.message,
       }))
 
       return res.status(400).json({
         error: 'Datos de entrada inválidos',
-        details
+        details,
       })
     }
 
