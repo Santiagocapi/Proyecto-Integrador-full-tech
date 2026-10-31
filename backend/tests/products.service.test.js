@@ -56,6 +56,12 @@ describe('Servicio de productos con transporte simulado', () => {
     expect(result).toEqual({ items: [{ id: 1 }], total: 21, page: 2, pages: 3 })
   })
 
+  it('filtra varias compatibilidades como elementos separados', async () => {
+    respond([])
+    await productsService.list({ compat: 'PC, Mac' })
+    expect(requestedUrl().searchParams.get('compatibility')).toBe('cs.{PC,Mac}')
+  })
+
   it.each([
     ['price_asc', 'price.asc,id.asc'],
     ['price_desc', 'price.desc,id.asc'],
