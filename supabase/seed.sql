@@ -26,104 +26,104 @@ WITH product_data (
   ('audio', 'Micrófono corbatero inalámbrico Dual USB-C', 'microfono-corbatero-dual-usbc',
    'Set inalámbrico de dos micrófonos para creadores móviles.', 79999.00, 69999.00,
    'USB-C', ARRAY['Android USB-C', 'Dispositivos compatibles con USB-C']::TEXT[],
-   '{"tipo":"corbatero inalámbrico","canales":2,"receptor":"USB-C"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"corbatero inalámbrico","canales":2,"receptor":"USB-C"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/microfono-corbatero-dual-usbc.png']::TEXT[], FALSE, TRUE),
 
   ('audio', 'Micrófono corbatero inalámbrico Dual Lightning', 'microfono-corbatero-dual-lightning',
    'Set inalámbrico de dos micrófonos para dispositivos con Lightning.', 84999.00, NULL,
    'Lightning', ARRAY['iPhone con Lightning']::TEXT[],
-   '{"tipo":"corbatero inalámbrico","canales":2,"receptor":"Lightning"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"corbatero inalámbrico","canales":2,"receptor":"Lightning"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/microfono-corbatero-dual-lightning.png']::TEXT[], FALSE, TRUE),
 
   ('audio', 'Micrófono de condensador USB con filtro antipop', 'microfono-condensador-usb',
    'Micrófono USB para streaming, podcast y videollamadas.', 104999.00, 89999.00,
    'USB', ARRAY['PC', 'Mac']::TEXT[],
-   '{"tipo":"condensador","conexion":"USB","incluye":"filtro antipop"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"condensador","conexion":"USB","incluye":"filtro antipop"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/microfono-condensador-usb.png']::TEXT[], FALSE, TRUE),
 
   ('audio', 'Micrófono condensador USB/XLR', 'microfono-condensador-usb-xlr',
    'Micrófono para grabación y streaming con conexión USB/XLR.', 139999.00, NULL,
    'USB/XLR', ARRAY['PC', 'Mac', 'Interfaz de audio XLR']::TEXT[],
-   '{"tipo":"condensador","conexiones":["USB","XLR"]}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"condensador","conexiones":["USB","XLR"]}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/microfono-condensador-usb-xlr.png']::TEXT[], FALSE, TRUE),
 
   ('audio', 'Brazo articulado para micrófono', 'brazo-articulado-microfono',
    'Brazo articulado para ubicar el micrófono en el escritorio.', 45999.00, 39999.00,
    'Mecánica', ARRAY['Micrófonos con montaje compatible']::TEXT[],
-   '{"montaje":"abrazadera de escritorio","movimiento":"articulado"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"montaje":"abrazadera de escritorio","movimiento":"articulado"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/brazo-articulado-microfono.png']::TEXT[], FALSE, TRUE),
 
   ('audio', 'Soporte de escritorio para micrófono', 'soporte-escritorio-microfono',
    'Soporte compacto de escritorio para micrófonos compatibles.', 24999.00, NULL,
    'Mecánica', ARRAY['Micrófonos con rosca compatible']::TEXT[],
-   '{"tipo":"soporte de escritorio","uso":"podcast y streaming"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"soporte de escritorio","uso":"podcast y streaming"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/soporte-escritorio-microfono.png']::TEXT[], FALSE, TRUE),
 
   ('iluminacion', 'Aro de luz LED 18 pulgadas con trípode', 'aro-de-luz-led-18',
    'Aro LED con trípode ajustable para grabación y streaming.', 74999.00, NULL,
    'USB', ARRAY['Smartphone', 'Cámara compatible con iluminación externa']::TEXT[],
-   '{"tipo":"aro LED","diametro_pulgadas":18,"incluye":"trípode"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"aro LED","diametro_pulgadas":18,"incluye":"trípode"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/aro-de-luz-led-18.png']::TEXT[], FALSE, TRUE),
 
   ('iluminacion', 'Aro de luz LED compacto 10 pulgadas', 'aro-de-luz-led-10',
    'Aro de luz compacto para escritorio y videollamadas.', 32999.00, 28999.00,
    'USB', ARRAY['Smartphone', 'PC']::TEXT[],
-   '{"tipo":"aro LED","diametro_pulgadas":10}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"aro LED","diametro_pulgadas":10}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/aro-de-luz-led-10.png']::TEXT[], FALSE, TRUE),
 
   ('iluminacion', 'Minipanel LED portátil con clip', 'minipanel-led-portatil',
    'Luz LED portátil con clip para cámara o celular.', 39999.00, NULL,
    'USB-C', ARRAY['Smartphone', 'Cámara con montaje compatible']::TEXT[],
-   '{"tipo":"panel LED","montaje":"clip","portatil":true}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"panel LED","montaje":"clip","portatil":true}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/minipanel-led-portatil.png']::TEXT[], FALSE, TRUE),
 
   ('iluminacion', 'Tira LED Neón RGB inteligente', 'tira-led-neon-rgb',
    'Tira de iluminación RGB para ambientar el setup.', 35999.00, 31999.00,
    'USB', ARRAY['Setup de escritorio']::TEXT[],
-   '{"tipo":"tira LED","colores":"RGB","control":"inteligente, según modelo"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"tira LED","colores":"RGB","control":"inteligente, según modelo"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/tira-led-neon-rgb.png']::TEXT[], FALSE, TRUE),
 
   ('iluminacion', 'Luz LED de escritorio regulable', 'luz-led-escritorio-regulable',
    'Luz compacta regulable para iluminar el espacio de trabajo.', 27999.00, NULL,
    'USB', ARRAY['PC', 'Mac', 'Cargador USB compatible']::TEXT[],
-   '{"tipo":"luz de escritorio","intensidad":"regulable"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"luz de escritorio","intensidad":"regulable"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/luz-led-escritorio-regulable.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Gimbal estabilizador para celular', 'gimbal-estabilizador',
    'Estabilizador portátil para grabar video con el smartphone.', 119999.00, NULL,
    'Bluetooth/USB', ARRAY['Smartphones compatibles según tamaño y peso']::TEXT[],
-   '{"tipo":"gimbal","uso":"video móvil","ejes":"según modelo"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"gimbal","uso":"video móvil","ejes":"según modelo"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/gimbal-estabilizador.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Trípode flexible para smartphone', 'tripode-flexible-smartphone',
    'Trípode flexible para grabación y fotografía móvil.', 22999.00, 19999.00,
    'Mecánica', ARRAY['Smartphones con soporte compatible']::TEXT[],
-   '{"tipo":"trípode flexible","uso":"móvil"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"trípode flexible","uso":"móvil"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/tripode-flexible-smartphone.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Trípode de mesa compacto', 'tripode-mesa-compacto',
    'Trípode pequeño para cámaras livianas o soportes de celular.', 18999.00, NULL,
    'Mecánica', ARRAY['Cámaras y soportes con montaje compatible']::TEXT[],
-   '{"tipo":"trípode de mesa","portatil":true}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"trípode de mesa","portatil":true}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/tripode-mesa-compacto.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Trípode ajustable para smartphone', 'tripode-ajustable-smartphone',
    'Trípode de altura ajustable con soporte para teléfono.', 34999.00, NULL,
    'Mecánica', ARRAY['Smartphones con soporte compatible']::TEXT[],
-   '{"tipo":"trípode ajustable","incluye":"soporte para smartphone"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"trípode ajustable","incluye":"soporte para smartphone"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/tripode-ajustable-smartphone.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Soporte de celular para escritorio', 'soporte-celular-escritorio',
    'Soporte de escritorio para posicionar el teléfono durante transmisiones.', 14999.00, 12999.00,
    'Mecánica', ARRAY['Smartphones compatibles con el ancho del soporte']::TEXT[],
-   '{"tipo":"soporte de escritorio","dispositivo":"smartphone"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"soporte de escritorio","dispositivo":"smartphone"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/soporte-celular-escritorio.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Montura universal para cámara y celular', 'montura-universal-camara-celular',
    'Accesorio de montaje para configuraciones de grabación compatibles.', 16999.00, NULL,
    'Mecánica', ARRAY['Cámaras y smartphones con adaptador compatible']::TEXT[],
-   '{"tipo":"montura universal","uso":"video"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"montura universal","uso":"video"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/montura-universal-camara-celular.png']::TEXT[], FALSE, TRUE),
 
   ('video-y-soportes', 'Trípode de mano para creador móvil', 'tripode-mano-creador-mobile',
    'Trípode compacto de mano para grabación en movimiento.', 25999.00, NULL,
    'Mecánica', ARRAY['Smartphones con soporte compatible']::TEXT[],
-   '{"tipo":"trípode de mano","uso":"creación móvil"}'::JSONB, ARRAY[]::TEXT[], FALSE, TRUE),
+   '{"tipo":"trípode de mano","uso":"creación móvil"}'::JSONB, ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/tripode-mano-creador-mobile.png']::TEXT[], FALSE, TRUE),
 
   ('starter-packs', 'Kit Mi Primer Stream', 'kit-mi-primer-stream',
-   'Combo inicial con iluminación, audio USB y trípode de mesa.', 174999.00, 149999.00,
+   'Combo inicial con aro de luz, micrófono condensador USB y micrófono corbatero para streaming y creación de contenido.', 174999.00, 149999.00,
    'USB/Mecánica', ARRAY['PC', 'Mac']::TEXT[],
-   '{"tipo":"starter pack","incluye":["Aro de luz LED 18 pulgadas con trípode","Micrófono de condensador USB con filtro antipop","Trípode de mesa compacto"]}'::JSONB,
-   ARRAY[]::TEXT[], TRUE, TRUE),
+   '{"tipo":"starter pack","incluye":["Aro de luz LED 18 pulgadas con trípode","Micrófono de condensador USB con filtro antipop","Micrófono corbatero inalámbrico Dual USB-C","Estuche de transporte"]}'::JSONB,
+   ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/starter-pack-mi-primer-stream.png']::TEXT[], TRUE, TRUE),
 
   ('starter-packs', 'Kit Creador Mobile', 'kit-creador-mobile',
-   'Combo móvil con micrófonos inalámbricos, miniluz LED y trípode de mano.', 159999.00, 139999.00,
+   'Combo móvil con gimbal estabilizador, minipanel LED, trípode de mano y montura universal para crear contenido con el smartphone.', 159999.00, 139999.00,
    'USB-C/Mecánica', ARRAY['Smartphones compatibles con USB-C']::TEXT[],
-   '{"tipo":"starter pack","incluye":["Micrófono corbatero inalámbrico Dual USB-C","Minipanel LED portátil con clip","Trípode de mano para creador móvil"]}'::JSONB,
-   ARRAY[]::TEXT[], TRUE, TRUE)
+   '{"tipo":"starter pack","incluye":["Gimbal estabilizador para celular","Minipanel LED portátil con clip","Trípode de mano para creador móvil","Montura universal para cámara y celular","Estuche de transporte","Control remoto Bluetooth","Accesorios de montaje"]}'::JSONB,
+   ARRAY['https://lyyvrjtsrjbpeikggwbn.supabase.co/storage/v1/object/public/products/starter-pack-creador-mobile.png']::TEXT[], TRUE, TRUE)
 )
 INSERT INTO public.products (
   category_id, name, slug, description, price, offer_price,
@@ -181,23 +181,62 @@ ON CONFLICT (sku) DO UPDATE SET
   name = EXCLUDED.name,
   stock = EXCLUDED.stock;
 
+
 -- 4) Relación entre kits y sus productos componentes.
--- Inserta o actualiza las relaciones sin borrar las existentes.
-INSERT INTO public.bundle_items (bundle_id, product_id, quantity)
-SELECT kit.id, component.id, 1
-FROM (
+-- Sincroniza los componentes para evitar relaciones antiguas.
+
+WITH expected_items (bundle_slug, component_slug) AS (
+  VALUES
+    -- Starter Pack: Mi Primer Stream
+    ('kit-mi-primer-stream', 'aro-de-luz-led-18'),
+    ('kit-mi-primer-stream', 'microfono-condensador-usb'),
+    ('kit-mi-primer-stream', 'microfono-corbatero-dual-usbc'),
+
+    -- Starter Pack: Creador Mobile
+    ('kit-creador-mobile', 'gimbal-estabilizador'),
+    ('kit-creador-mobile', 'minipanel-led-portatil'),
+    ('kit-creador-mobile', 'tripode-mano-creador-mobile'),
+    ('kit-creador-mobile', 'montura-universal-camara-celular')
+),
+resolved_items AS (
+  SELECT
+    kit.id AS bundle_id,
+    component.id AS product_id
+  FROM expected_items e
+  JOIN public.products kit
+    ON kit.slug = e.bundle_slug
+  JOIN public.products component
+    ON component.slug = e.component_slug
+)
+DELETE FROM public.bundle_items bi
+USING public.products kit
+WHERE bi.bundle_id = kit.id
+  AND kit.slug IN ('kit-mi-primer-stream', 'kit-creador-mobile')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM resolved_items expected
+    WHERE expected.bundle_id = bi.bundle_id
+      AND expected.product_id = bi.product_id
+  );
+
+WITH expected_items (bundle_slug, component_slug) AS (
   VALUES
     ('kit-mi-primer-stream', 'aro-de-luz-led-18'),
     ('kit-mi-primer-stream', 'microfono-condensador-usb'),
-    ('kit-mi-primer-stream', 'tripode-mesa-compacto'),
-    ('kit-creador-mobile', 'microfono-corbatero-dual-usbc'),
+    ('kit-mi-primer-stream', 'microfono-corbatero-dual-usbc'),
+    ('kit-creador-mobile', 'gimbal-estabilizador'),
     ('kit-creador-mobile', 'minipanel-led-portatil'),
-    ('kit-creador-mobile', 'tripode-mano-creador-mobile')
-) AS links(bundle_slug, component_slug)
-JOIN public.products kit ON kit.slug = links.bundle_slug
-JOIN public.products component ON component.slug = links.component_slug
-ON CONFLICT (bundle_id, product_id) DO UPDATE
-SET quantity = EXCLUDED.quantity;
+    ('kit-creador-mobile', 'tripode-mano-creador-mobile'),
+    ('kit-creador-mobile', 'montura-universal-camara-celular')
+)
+INSERT INTO public.bundle_items (bundle_id, product_id, quantity)
+SELECT kit.id, component.id, 1
+FROM expected_items e
+JOIN public.products kit ON kit.slug = e.bundle_slug
+JOIN public.products component ON component.slug = e.component_slug
+ON CONFLICT (bundle_id, product_id)
+DO UPDATE SET quantity = EXCLUDED.quantity;
+
 
 COMMIT;
 

@@ -1,51 +1,46 @@
-<script setup>
-import ProductCard from '@/components/product/ProductCard.vue'
 
-// Datos de ejemplo, solo para ver las tarjetas. No se commitea.
-const products = [
-  {
-    name: 'Kit Mi Primer Stream',
-    slug: 'kit-mi-primer-stream',
-    price: 174999,
-    offer_price: 149999,
-    images: [],
-    is_bundle: true,
-    category: { name: 'Starter Packs' },
-  },
-  {
-    name: 'Micrófono de condensador USB con filtro antipop',
-    slug: 'microfono-condensador-usb',
-    price: 104999,
-    offer_price: 89999,
-    images: [],
-    is_bundle: false,
-    category: { name: 'Audio' },
-  },
-  {
-    name: 'Aro de luz LED 18" con trípode',
-    slug: 'aro-de-luz-led-18',
-    price: 74999,
-    offer_price: null,
-    images: [],
-    is_bundle: false,
-    category: { name: 'Iluminación' },
-  },
-  {
-    name: 'Gimbal estabilizador para celular',
-    slug: 'gimbal-estabilizador',
-    price: 119999,
-    offer_price: null,
-    images: [],
-    is_bundle: false,
-    category: { name: 'Video y Soportes' },
-  },
-]
+<script setup>
+import { ref, onMounted } from 'vue'
+import ProductCard from '@/components/product/ProductCard.vue'
+import { api } from '@/services/api'
+
+const products = ref([])
+const loading = ref(true)
+const error = ref('')
+
+onMounted(async () => {
+  try {
+    const response = await api.get('/products?limit=20')
+
+    products.value = response.items.map((product) => ({
+      ...product,
+      category: product.categories,
+    }))
+  } catch (err) {
+    error.value = err.message || 'No se pudieron cargar los productos.'
+    console.error('Error al cargar productos:', err)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
   <div class="container section">
-    <div class="grid-products">
-      <ProductCard v-for="product in products" :key="product.slug" :product="product" />
+    <p v-if="loading">Cargando productos...</p>
+
+    <p v-else-if="error">
+      {{ error }}
+    </p>
+
+    <div v-else-if="products.length" class="grid-products">
+      <ProductCard
+        v-for="product in products"
+        :key="product.slug"
+        :product="product"
+      />
     </div>
+
+    <p v-else>No hay productos disponibles.</p>
   </div>
 </template>
