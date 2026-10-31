@@ -52,7 +52,7 @@ export const productsService = {
 
     // compatibility es un array TEXT[] en PostgreSQL
     if (compat) {
-      query = query.contains('compatibility', [compat])
+      query = query.contains('compatibility', compat.split(',').map((value) => value.trim()).filter(Boolean))
     }
 
     // Buscar por nombre o descripción

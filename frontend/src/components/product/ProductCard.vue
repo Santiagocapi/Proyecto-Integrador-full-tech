@@ -63,8 +63,8 @@ const discount = computed(() => {
     </div>
 
     <div class="product-card__body">
-      <span v-if="product.category?.name" class="product-card__category">
-        {{ product.category.name }}
+      <span v-if="product.categories?.name || product.category?.name" class="product-card__category">
+        {{ product.categories?.name || product.category.name }}
       </span>
       <h3 class="product-card__name">{{ product.name }}</h3>
       <div class="product-card__prices">
