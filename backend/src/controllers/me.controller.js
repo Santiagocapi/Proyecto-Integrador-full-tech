@@ -18,16 +18,16 @@ export const meController = {
     }
   },
 
-  // Actualizar perfil del usuario autenticado
+  // Actualizar perfil del usuario autenticado (Protegiendo el rol)
   async updateProfile(req, res, next) {
     try {
-      const userId = req.user.id; // Inyectado por middleware requireAuth
-
-      // Extraemos solo las variables permitidas (evita asignación masiva insegura)
+      const userId = req.user.id; 
+      
+      // Extraemos solo los campos permitidos, ignorando cualquier intento de inyectar 'role'
       const { full_name, phone, address, city, province, zip } = req.body;
 
-      // Actualización directa y segura en la tabla 'profiles'
-      const { data, error } = await supabase
+      // Intentamos actualizar directamente en la tabla profiles
+      let { data, error } = await supabase
         .from('profiles')
         .update({
           full_name,
@@ -39,7 +39,27 @@ export const meController = {
         })
         .eq('id', userId)
         .select()
-        .single();
+        .maybeSingle();
+
+      // Si el perfil no existía previamente, lo insertamos
+      if (!data && !error) {
+        const insertRes = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name,
+            phone,
+            address,
+            city,
+            province,
+            zip
+          })
+          .select()
+          .single();
+          
+        data = insertRes.data;
+        error = insertRes.error;
+      }
 
       if (error) {
         return res.status(400).json({ 
@@ -53,7 +73,11 @@ export const meController = {
         profile: data
       });
     } catch (err) {
-      next(err); // Capturado por el handler global de errores
+      next(err);
     }
   }
 };
+
+export const updateProfile = meController.updateProfile;
+export const getProfile = meController.getProfile;
+export default meController;

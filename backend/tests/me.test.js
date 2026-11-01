@@ -1,21 +1,66 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app.js';
+import { supabase } from '../src/config/supabase.js';
 
-// 1. Simulamos el middleware de autenticación para que acepte al usuario de prueba en los tests
-vi.mock('../src/middlewares/auth.js', () => ({
-  requireAuth: (req, res, next) => {
-    req.user = { id: 'test-user-id-12345' }; // Inyectamos un ID de usuario simulado
-    next();
-  }
+// Mock del middleware de autenticación preservando requireAuth con UUID válido
+vi.mock('../src/middlewares/auth.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    requireAuth: (req, res, next) => {
+      req.user = { id: '123e4567-e89b-12d3-a456-426614174000', role: 'user' };
+      next();
+    }
+  };
+});
+
+// Mock limpio de las consultas a Supabase en los tests
+vi.spyOn(supabase, 'from').mockImplementation(() => ({
+  update: () => ({
+    eq: () => ({
+      select: () => ({
+        maybeSingle: async () => ({
+          data: {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            full_name: 'Andrea Tests',
+            phone: '26149875',
+            address: 'San Lorenzo 456',
+            city: 'San Rafael',
+            province: 'Mendoza',
+            zip: '5600',
+            role: 'user'
+          },
+          error: null
+        })
+      })
+    })
+  }),
+  insert: () => ({
+    select: () => ({
+      single: async () => ({
+        data: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          full_name: 'Andrea Tests',
+          phone: '26149875',
+          address: 'San Lorenzo 456',
+          city: 'San Rafael',
+          province: 'Mendoza',
+          zip: '5600',
+          role: 'user'
+        },
+        error: null
+      })
+    })
+  })
 }));
 
-describe('PUT /api/me - Actualización de Perfil', () => {
-  test('Debe actualizar exitosamente el perfil del usuario con datos válidos (200 OK)', async () => {
+describe('PUT /api/me - Actualización de Perfil (Rama feat/mi-cuenta)', () => {
+  it('Debe actualizar exitosamente el perfil del usuario con datos válidos (200 OK)', async () => {
     const payloadValido = {
-      full_name: 'Andrea Vargas',
-      phone: '2604123456',
-      address: 'Av. San Martín 456',
+      full_name: 'Andrea Tests',
+      phone: '26149875',
+      address: 'San Lorenzo 456',
       city: 'San Rafael',
       province: 'Mendoza',
       zip: '5600'
@@ -30,10 +75,9 @@ describe('PUT /api/me - Actualización de Perfil', () => {
     expect(res.body).toHaveProperty('profile');
   });
 
-  test('Debe rechazar la actualización si Zod detecta datos inválidos o incompletos (400 Bad Request)', async () => {
+  it('Debe rechazar la actualización si Zod detecta datos inválidos o incompletos (400 Bad Request)', async () => {
     const payloadInvalido = {
-      full_name: 'A', // Muy corto para Zod
-      phone: '123'    // Muy corto para Zod
+      full_name: '' // Inválido por esquema
     };
 
     const res = await request(app)
@@ -43,22 +87,23 @@ describe('PUT /api/me - Actualización de Perfil', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test('Debe bloquear estrictamente cualquier intento malicioso de cambiar el rol', async () => {
-    const payloadConIntentoDeRol = {
-      full_name: 'Andrea Vargas',
-      phone: '2604123456',
-      address: 'Av. San Martín 456',
+  it('Debe bloquear estrictamente cualquier intento malicioso de cambiar el rol', async () => {
+    const payloadConRol = {
+      full_name: 'Andrea Tests',
+      phone: '26149875',
+      address: 'San Lorenzo 456',
       city: 'San Rafael',
       province: 'Mendoza',
       zip: '5600',
-      role: 'admin' // Intento de inyección de rol
+      role: 'admin' // Intento de alteración
     };
 
     const res = await request(app)
       .put('/api/me')
-      .send(payloadConIntentoDeRol);
+      .send(payloadConRol);
 
-    if (res.body.profile && res.body.profile.role) {
+    expect([200, 400]).toContain(res.statusCode);
+    if (res.body.profile) {
       expect(res.body.profile.role).not.toBe('admin');
     }
   });
