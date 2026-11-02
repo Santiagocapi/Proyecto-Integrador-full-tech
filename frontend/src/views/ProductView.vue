@@ -1,9 +1,12 @@
+
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute, RouterLink } from 'vue-router'
+
 import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart'
 import { useToast } from '@/composables/useToast'
+import { formatPrice } from '@/utils/format'
 
 import ProductGallery from '@/components/product/ProductGallery.vue'
 import VariantSelector from '@/components/product/VariantSelector.vue'
@@ -12,234 +15,370 @@ import ProductCard from '@/components/product/ProductCard.vue'
 
 const route = useRoute()
 const cart = useCartStore()
-const { success, error } = useToast()
+const toast = useToast()
 
+// Estado de la página
 const product = ref(null)
 const loading = ref(true)
 const notFound = ref(false)
+const errorMessage = ref('')
 const selectedVariant = ref(null)
 const quantity = ref(1)
 const relatedProducts = ref([])
 
-const fetchProductData = async (slug) => {
+// Variantes del producto
+const variants = computed(() => {
+  return product.value?.product_variants
+    || product.value?.variants
+    || []
+})
+
+// Imagen principal
+const image = computed(() => {
+  return product.value?.images?.[0] ?? null
+})
+
+// Categoría
+const category = computed(() => {
+  return product.value?.categories?.name
+    || product.value?.category?.name
+    || ''
+})
+
+// Precio de la variante o del producto
+const finalPrice = computed(() => {
+  const variant = selectedVariant.value
+  const currentProduct = product.value
+
+  if (!currentProduct) return 0
+
+  const variantPrice = Number(variant?.price)
+  const productPrice = Number(currentProduct.price)
+
+  const basePrice = variant && variant.price != null
+    ? variantPrice
+    : productPrice
+
+  const offerPrice = Number(
+    variant?.offer_price ?? currentProduct.offer_price
+  )
+
+  if (offerPrice > 0 && offerPrice < basePrice) {
+    return offerPrice
+  }
+
+  return basePrice
+})
+
+// Precio anterior para mostrar ofertas
+const originalPrice = computed(() => {
+  if (!product.value) return 0
+
+  return Number(
+    selectedVariant.value?.price ?? product.value.price
+  )
+})
+
+const hasOffer = computed(() => {
+  return finalPrice.value > 0
+    && originalPrice.value > finalPrice.value
+})
+
+// Stock de la variante seleccionada
+const stock = computed(() => {
+  if (!selectedVariant.value) return 0
+
+  return Number(selectedVariant.value.stock ?? 0)
+})
+
+const hasStock = computed(() => stock.value > 0)
+
+// Carga del producto
+async function loadProduct(slug) {
+  if (!slug) return
+
   loading.value = true
   notFound.value = false
+  errorMessage.value = ''
+
+  product.value = null
+  selectedVariant.value = null
+  relatedProducts.value = []
+  quantity.value = 1
 
   try {
-    const response = await api.get(`/products/${slug}`)
-    product.value = response.data || response
+    const response = await api.get(
+      `/products/${encodeURIComponent(slug)}`
+    )
 
-    if (
-      product.value.product_variants &&
-      product.value.product_variants.length > 0
-    ) {
-      selectedVariant.value = product.value.product_variants[0]
-    } else {
-      selectedVariant.value = null
+    // Admite respuesta directa o respuesta dentro de data
+    const data = response?.data ?? response
+
+    if (!data || !data.id) {
+      notFound.value = true
+      return
     }
 
-    quantity.value = 1
-    relatedProducts.value = []
+    product.value = data
 
-    if (product.value.category_id) {
-      fetchRelatedProducts(product.value.category_id, product.value.id)
+    // Seleccionamos la primera variante disponible
+    const availableVariants = variants.value
+
+    if (availableVariants.length > 0) {
+      selectedVariant.value =
+        availableVariants.find(v => Number(v.stock) > 0)
+        || availableVariants[0]
+    }
+
+    // Cargamos los productos relacionados
+    if (data.category_id) {
+      await loadRelatedProducts(data.category_id, data.id)
     }
   } catch (err) {
+    console.error('Error al cargar producto:', err)
+
     if (err.status === 404) {
       notFound.value = true
     } else {
-      error('Error al cargar el producto')
+      errorMessage.value =
+        err.message || 'No se pudo cargar el producto.'
+
+      toast.error(errorMessage.value)
     }
   } finally {
     loading.value = false
   }
 }
 
-const fetchRelatedProducts = async (categoryId, currentId) => {
+// Productos relacionados
+async function loadRelatedProducts(categoryId, currentId) {
   try {
-    const res = await api.get(`/products?category=${categoryId}&limit=4`)
-    relatedProducts.value = (res.items || res).filter(
-      p => p.id !== currentId
+    const response = await api.get(
+      `/products?category=${encodeURIComponent(categoryId)}&limit=4`
     )
+
+    const data = response?.data ?? response
+
+    const items = Array.isArray(data)
+      ? data
+      : data?.items ?? data?.products ?? []
+
+    relatedProducts.value = items
+      .filter(item => item.id !== currentId)
+      .slice(0, 4)
   } catch (err) {
-    console.error('Error cargando relacionados', err)
+    console.error('Error al cargar productos relacionados:', err)
+    relatedProducts.value = []
   }
 }
 
-const handleVariantChange = (variant) => {
+// Cambio de variante
+function handleVariantChange(variant) {
   selectedVariant.value = variant
   quantity.value = 1
 }
 
-const handleAddToCart = () => {
-  if (!selectedVariant.value) return
-
-  try {
-    cart.addItem({
-      variantId: selectedVariant.value.id,
-      productId: product.value.id,
-      name: product.value.name,
-      variantName: selectedVariant.value.name,
-      price: selectedVariant.value.offer_price || product.value.price,
-      image: product.value.images?.[0] || '',
-      stock: selectedVariant.value.stock
-    }, quantity.value)
-
-    success(`¡${product.value.name} agregado al carrito!`)
-    cart.open()
-  } catch {
-    error('No se pudo agregar al carrito')
-  }
-}
-
-const decreaseQuantity = () => {
+// Cantidad
+function decreaseQuantity() {
   if (quantity.value > 1) {
     quantity.value--
   }
 }
 
-const increaseQuantity = () => {
-  if (
-    selectedVariant.value &&
-    quantity.value < selectedVariant.value.stock
-  ) {
+function increaseQuantity() {
+  if (quantity.value < stock.value) {
     quantity.value++
   }
 }
 
-watch(() => route.params.slug, (newSlug) => {
-  if (newSlug) fetchProductData(newSlug)
-})
+// Agregar al carrito
+function handleAddToCart() {
+  if (!product.value || !selectedVariant.value) {
+    toast.error('Seleccioná una variante del producto.')
+    return
+  }
 
-onMounted(() => {
-  fetchProductData(route.params.slug)
-})
+  if (!hasStock.value) {
+    toast.error('Esta variante no tiene stock disponible.')
+    return
+  }
+
+  if (quantity.value > stock.value) {
+    toast.error('La cantidad supera el stock disponible.')
+    return
+  }
+
+  try {
+    cart.addItem(
+      {
+        variantId: selectedVariant.value.id,
+        productId: product.value.id,
+        name: product.value.name,
+        variantName: selectedVariant.value.name,
+        price: finalPrice.value,
+        image: image.value || '',
+        stock: stock.value,
+      },
+      quantity.value
+    )
+
+    toast.success(
+      `${product.value.name} agregado al carrito.`
+    )
+
+    cart.open()
+  } catch (err) {
+    console.error('Error al agregar al carrito:', err)
+    toast.error('No se pudo agregar el producto al carrito.')
+  }
+}
+
+// Recargar cuando cambia el slug de la ruta
+watch(
+  () => route.params.slug,
+  (newSlug) => {
+    loadProduct(newSlug)
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
   <main class="product-page">
 
-    <!-- Cargando -->
-    <div v-if="loading" class="product-state">
+    <!-- CARGANDO -->
+    <section v-if="loading" class="product-state">
       <div class="loading-spinner"></div>
       <p>Cargando producto...</p>
-    </div>
+    </section>
 
-    <!-- Producto no encontrado -->
-    <div v-else-if="notFound" class="product-state">
+    <!-- PRODUCTO NO ENCONTRADO -->
+    <section v-else-if="notFound" class="product-state">
       <h2>Producto no encontrado</h2>
-      <p>El producto que buscás no está disponible.</p>
-      <RouterLink to="/" class="back-button">
-        Volver al inicio
+      <p>El producto que buscás no existe o ya no está disponible.</p>
+
+      <RouterLink to="/catalogo" class="back-button">
+        Volver al catálogo
       </RouterLink>
-    </div>
+    </section>
 
-    <!-- Detalle del producto -->
-    <div v-else-if="product" class="product-content">
+    <!-- ERROR -->
+    <section v-else-if="errorMessage" class="product-state">
+      <h2>No pudimos cargar el producto</h2>
+      <p>{{ errorMessage }}</p>
 
-      <!-- Navegación y calificación -->
+      <RouterLink to="/catalogo" class="back-button">
+        Volver al catálogo
+      </RouterLink>
+    </section>
+
+    <!-- DETALLE DEL PRODUCTO -->
+    <template v-else-if="product">
+
       <div class="product-topbar">
-        <div class="product-breadcrumb">
+        <nav class="product-breadcrumb">
           <RouterLink to="/">Inicio</RouterLink>
           <span>/</span>
-          <span>Catálogo</span>
+          <RouterLink to="/catalogo">Catálogo</RouterLink>
           <span>/</span>
-          <span>{{ product.category?.name || 'Tecnología' }}</span>
-        </div>
-
-        <div class="product-rating">
-          <span class="rating-star">★</span>
-          <strong>{{ product.rating || '4.9' }}</strong>
-          <span class="rating-reviews">
-            ({{ product.reviewsCount || 142 }} opiniones)
-          </span>
-        </div>
+          <span>{{ product.name }}</span>
+        </nav>
       </div>
 
-      <!-- Galería y compra -->
       <section class="product-detail-grid">
 
-        <!-- Imágenes -->
-        <ProductGallery
-          :images="product.images || []"
-          :alt-name="product.name"
-        />
+        <!-- GALERÍA -->
+        <div class="product-media">
+          <ProductGallery
+            :images="product.images || []"
+            :alt-name="product.name"
+          />
+        </div>
 
-        <!-- Información de compra -->
+        <!-- INFORMACIÓN Y COMPRA -->
         <div class="product-purchase">
 
-          <div class="purchase-heading">
-            <span class="product-badge">
-              <span class="badge-dot"></span>
-              Tendencia hoy
-            </span>
+          <span v-if="category" class="product-badge">
+            <span class="badge-dot"></span>
+            {{ category }}
+          </span>
 
-            <h1 class="product-title">
-              {{ product.name }}
-            </h1>
+          <span v-if="product.is_bundle" class="product-badge">
+            Starter Pack / Kit
+          </span>
 
-            <p class="product-short-description">
-              {{ product.short_description || product.description || 'Descubrí todos los detalles de este producto.' }}
-            </p>
-          </div>
+          <h1 class="product-title">
+            {{ product.name }}
+          </h1>
 
-          <!-- Precio -->
+          <p class="product-short-description">
+            {{ product.short_description || product.description }}
+          </p>
+
+          <!-- PRECIO -->
           <div class="product-price-block">
             <div class="product-price-row">
-              <span class="product-price">
-                ${{ Number(selectedVariant?.offer_price || product.price || 0).toLocaleString('es-AR') }}
-              </span>
+
+              <strong class="product-price">
+                {{ formatPrice(finalPrice) }}
+              </strong>
 
               <span
-                v-if="selectedVariant?.offer_price || product.offer_price"
+                v-if="hasOffer"
                 class="product-old-price"
               >
-                ${{ Number(product.price || 0).toLocaleString('es-AR') }}
+                {{ formatPrice(originalPrice) }}
               </span>
+
             </div>
 
             <p class="product-price-note">
-              Precio expresado en pesos argentinos
+              Precio expresado en pesos argentinos.
             </p>
           </div>
 
-          <p class="product-sku" v-if="product.sku">
+          <!-- SKU -->
+          <p v-if="product.sku" class="product-sku">
             SKU: {{ product.sku }}
           </p>
 
-          <!-- Variantes -->
+          <!-- VARIANTES -->
           <VariantSelector
-            v-if="product.product_variants?.length"
-            :variants="product.product_variants"
+            v-if="variants.length"
+            :variants="variants"
             @change="handleVariantChange"
           />
 
-          <!-- Disponibilidad -->
+          <!-- STOCK -->
           <div
             v-if="selectedVariant"
             class="product-stock"
-            :class="selectedVariant.stock > 0 ? 'in-stock' : 'out-stock'"
+            :class="hasStock ? 'in-stock' : 'out-stock'"
           >
             <span class="stock-indicator"></span>
-            <span v-if="selectedVariant.stock > 0">
-              Disponible · {{ selectedVariant.stock }} unidades
+
+            <span v-if="hasStock">
+              Disponible: {{ stock }} unidades
             </span>
+
             <span v-else>
               Producto agotado
             </span>
           </div>
 
-          <!-- Cantidad y carrito -->
-          <div
-            v-if="selectedVariant"
-            class="purchase-actions"
-          >
+          <div v-else class="product-stock out-stock">
+            No hay variantes disponibles para este producto.
+          </div>
+
+          <!-- CANTIDAD Y CARRITO -->
+          <div class="purchase-actions">
+
             <div class="quantity-control">
               <button
                 type="button"
-                @click="decreaseQuantity"
-                :disabled="quantity <= 1"
                 aria-label="Disminuir cantidad"
+                :disabled="quantity <= 1"
+                @click="decreaseQuantity"
               >
                 −
               </button>
@@ -248,9 +387,9 @@ onMounted(() => {
 
               <button
                 type="button"
-                @click="increaseQuantity"
-                :disabled="quantity >= selectedVariant.stock"
                 aria-label="Aumentar cantidad"
+                :disabled="!hasStock || quantity >= stock"
+                @click="increaseQuantity"
               >
                 +
               </button>
@@ -259,36 +398,38 @@ onMounted(() => {
             <button
               type="button"
               class="add-cart-button"
+              :disabled="!selectedVariant || !hasStock"
               @click="handleAddToCart"
-              :disabled="selectedVariant.stock <= 0"
             >
               <span class="cart-icon">🛒</span>
-              Agregar al carrito
+
+              {{ hasStock ? 'Agregar al carrito' : 'Sin stock' }}
             </button>
+
           </div>
 
-          <!-- Beneficios -->
+          <!-- BENEFICIOS -->
           <div class="purchase-benefits">
             <div class="benefit-item">
               <span class="benefit-icon">✓</span>
-              <span>Compra segura</span>
+              Productos tecnológicos seleccionados
             </div>
 
             <div class="benefit-item">
-              <span class="benefit-icon">↗</span>
-              <span>Calidad garantizada</span>
+              <span class="benefit-icon">✓</span>
+              Compra segura a través de FULL-TECH
             </div>
 
             <div class="benefit-item">
-              <span class="benefit-icon">₱</span>
-              <span>Medios de pago disponibles</span>
+              <span class="benefit-icon">✓</span>
+              Consultá los medios de pago en el proceso de compra
             </div>
           </div>
 
         </div>
       </section>
 
-      <!-- Descripción y ficha técnica -->
+      <!-- DESCRIPCIÓN, FICHA TÉCNICA Y COMPATIBILIDAD -->
       <section class="product-extra">
         <ProductSpecs
           :description="product.description || ''"
@@ -297,28 +438,30 @@ onMounted(() => {
         />
       </section>
 
-      <!-- Productos relacionados -->
+      <!-- PRODUCTOS RELACIONADOS -->
       <section
         v-if="relatedProducts.length"
         class="related-section"
       >
         <div class="related-heading">
-          <div>
-            <span class="section-eyebrow">SELECCIÓN FULL-TECH</span>
-            <h2>También te puede interesar</h2>
-          </div>
+          <span class="section-eyebrow">
+            TAMBIÉN TE PUEDE INTERESAR
+          </span>
+
+          <h2>Productos relacionados</h2>
         </div>
 
         <div class="related-grid">
           <ProductCard
-            v-for="related in relatedProducts"
-            :key="related.id"
-            :product="related"
+            v-for="item in relatedProducts"
+            :key="item.id"
+            :product="item"
           />
         </div>
       </section>
 
-    </div>
+    </template>
+
   </main>
 </template>
 
@@ -396,27 +539,6 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-.product-rating {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 13px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-  white-space: nowrap;
-  font-size: 0.85rem;
-}
-
-.rating-star {
-  color: #ffc857;
-  font-size: 1.2rem;
-}
-
-.rating-reviews {
-  color: var(--color-text-muted);
-}
-
 .product-detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -438,6 +560,7 @@ onMounted(() => {
 .product-badge {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: 8px;
   padding: 7px 12px;
   border: 1px solid rgba(0, 240, 255, 0.25);
@@ -459,7 +582,7 @@ onMounted(() => {
 }
 
 .product-title {
-  margin: 16px 0 10px;
+  margin: 0;
   color: var(--color-text);
   font-family: var(--font-display);
   font-size: clamp(1.6rem, 2.5vw, 2.25rem);
