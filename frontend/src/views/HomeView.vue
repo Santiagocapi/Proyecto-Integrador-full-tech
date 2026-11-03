@@ -2,6 +2,7 @@
 import HeroBanner from '@/components/home/HeroBanner.vue'
 import CategoryGrid from '@/components/home/CategoryGrid.vue'
 import FeaturedKits from '@/components/home/FeaturedKits.vue'
+import NewArrivals from '@/components/home/NewArrivals.vue'
 </script>
 
 <template>
@@ -9,6 +10,7 @@ import FeaturedKits from '@/components/home/FeaturedKits.vue'
     <HeroBanner />
     <CategoryGrid />
     <FeaturedKits />
+    <NewArrivals />
   </div>
 </template>
 
