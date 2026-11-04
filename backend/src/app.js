@@ -8,6 +8,7 @@ import categoriesRoutes from './routes/categories.routes.js'
 import productsRoutes from './routes/products.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import adminProductsRoutes from './routes/admin-products.routes.js'
+import meRoutes from './routes/me.routes.js'
 
 export const app = express()
 
@@ -24,6 +25,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminProductsRoutes)
 app.use('/api/categories', categoriesRoutes)
 app.use('/api/products', productsRoutes)
+app.use('/api', meRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
