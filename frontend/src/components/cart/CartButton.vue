@@ -8,7 +8,7 @@ const { count } = storeToRefs(cartStore)
 
 <template>
   <button 
-    @click="cartStore.toggle()"
+    @click="cartStore.toggleCart"
     class="relative flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white transition-colors focus:outline-none"
     aria-label="Ver carrito de compras"
   >

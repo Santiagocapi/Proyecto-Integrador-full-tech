@@ -52,7 +52,7 @@ onUnmounted(() => {
 
         <!-- Lista de Productos -->
         <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          <div v-if="cartStore.items.length === 0" class="text-center text-gray-500 py-12">
+          <div v-if="cartStore.items.length === 0" class="text-center text-gray-500 py-12">+
             <p>Tu carrito está vacío.</p>
           </div>
 
@@ -61,8 +61,8 @@ onUnmounted(() => {
             :key="item.variantId"
             class="flex items-center justify-between border-b pb-4"
           >
-            <div class="flex items-center space-x-4">
-              <img :src="item.image" :alt="item.name" class="w-16 h-16 object-cover rounded" />
+          <div class="flex items-center space-x-4">
+           <img :src="item.image" :alt="item.name" class="w-16 h-16 shrink-0 object-cover rounded" />
               <div>
                 <h4 class="text-sm font-medium text-gray-900">{{ item.name }}</h4>
                 <p class="text-xs text-gray-500">{{ item.variantName }}</p>

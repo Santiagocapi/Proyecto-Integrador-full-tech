@@ -190,10 +190,9 @@ function increaseQuantity() {
     quantity.value++
   }
 }
-
 // Agregar al carrito
 function handleAddToCart() {
-  if (!product.value || !selectedVariant.value) {
+  if (!selectedVariant.value) {
     toast.error('Seleccioná una variante del producto.')
     return
   }
