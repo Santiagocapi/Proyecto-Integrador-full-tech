@@ -30,3 +30,12 @@ export const createOrderSchema = z.object({
     error: 'El método de pago no es válido',
   }),
 })
+
+// Código de seguimiento: FT- seguido de 6 letras mayúsculas o dígitos (se acepta en minúsculas)
+export const trackingParamsSchema = z.object({
+  tracking: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^FT-[A-Z0-9]{6}$/, 'El código de seguimiento no es válido'),
+})

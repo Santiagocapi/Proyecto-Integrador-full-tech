@@ -43,7 +43,67 @@ async function startMercadoPagoPayment(order, payerEmail) {
   return preference.init_point
 }
 
+// Columnas de lectura de un pedido con su detalle embebido (FK order_items.order_id → orders.id).
+// user_id se lee solo para chequear el dueño; nunca se expone.
+const ORDER_SELECT = `
+  id, user_id, tracking_code, status, total, payment_method, created_at, paid_at,
+  shipping_name, shipping_address, shipping_city, shipping_zip, shipping_phone,
+  order_items ( id, variant_id, product_name, variant_name, unit_price, quantity )
+`
+
+// Forma pública de un pedido: convierte bigint/numeric y oculta user_id y datos de Mercado Pago
+function toOrderResponse(row) {
+  return {
+    id: String(row.id),
+    tracking_code: row.tracking_code,
+    status: row.status,
+    total: Number(row.total),
+    payment_method: row.payment_method,
+    created_at: row.created_at,
+    paid_at: row.paid_at,
+    shipping: {
+      name: row.shipping_name,
+      address: row.shipping_address,
+      city: row.shipping_city,
+      zip: row.shipping_zip,
+      phone: row.shipping_phone,
+    },
+    items: (row.order_items ?? []).map((item) => ({
+      variant_id: String(item.variant_id),
+      product_name: item.product_name,
+      variant_name: item.variant_name,
+      unit_price: Number(item.unit_price),
+      quantity: item.quantity,
+    })),
+  }
+}
+
 export const ordersService = {
+  async listByUser(userId) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(ORDER_SELECT)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .order('id', { referencedTable: 'order_items', ascending: true })
+    if (error) throw error
+    return (data ?? []).map(toOrderResponse)
+  },
+
+  // Solo el dueño o un admin pueden verlo; para cualquier otro se responde igual que si no existiera
+  async getByTracking(tracking, user) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(ORDER_SELECT)
+      .eq('tracking_code', tracking)
+      .order('id', { referencedTable: 'order_items', ascending: true })
+      .maybeSingle()
+    if (error) throw error
+    const canSee = data && (data.user_id === user.id || user.role === 'admin')
+    if (!canSee) throw httpError(404, 'Pedido no encontrado')
+    return toOrderResponse(data)
+  },
+
   async create({ user, shipping, paymentMethod }) {
     // Toda la compra (stock, pedido, detalle y carrito) ocurre en una sola transacción SQL
     const { data: order, error } = await supabase.rpc('create_order', {
