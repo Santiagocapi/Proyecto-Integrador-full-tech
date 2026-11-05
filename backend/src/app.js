@@ -21,9 +21,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
-// Acá se montan las rutas de cada módulo, por ejemplo:
-// app.use('/api/products', productsRoutes)
-
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminProductsRoutes)
 app.use('/api/categories', categoriesRoutes)
