@@ -2,9 +2,8 @@
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
-
-// El carrito desplegable y los toasts (Dolo) se suman acá cuando existan,
-// así están disponibles en todas las páginas.
+import CartDrawer from '@/components/cart/CartDrawer.vue'
+import ToastContainer from '@/components/ui/ToastContainer.vue'
 </script>
 
 <template>
@@ -22,6 +21,8 @@ import AppFooter from '@/components/layout/AppFooter.vue'
     </main>
 
     <AppFooter />
+    <CartDrawer />
+    <ToastContainer />
   </div>
 </template>
 
