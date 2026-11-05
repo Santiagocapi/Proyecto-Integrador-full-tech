@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.routes.js'
 import adminProductsRoutes from './routes/admin-products.routes.js'
 import meRoutes from './routes/me.routes.js'
 import cartRoutes from './routes/cart.routes.js' // <--- 1. Importás tus rutas del carrito
+import ordersRoutes from './routes/orders.routes.js'
 
 export const app = express()
 
@@ -28,6 +29,7 @@ app.use('/api/categories', categoriesRoutes)
 app.use('/api/products', productsRoutes)
 app.use('/api', meRoutes)
 app.use('/api/cart', cartRoutes) // <--- 2. Montás tus rutas bajo /api/cart
+app.use('/api/orders', ordersRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
