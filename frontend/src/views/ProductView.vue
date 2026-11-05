@@ -221,11 +221,11 @@ function handleAddToCart() {
       quantity.value
     )
 
-    toast.success(
+   toast.success(
       `${product.value.name} agregado al carrito.`
     )
 
-    cart.open()
+    cart.open() 
   } catch (err) {
     console.error('Error al agregar al carrito:', err)
     toast.error('No se pudo agregar el producto al carrito.')
