@@ -12,22 +12,22 @@ import { adminProductsService as service } from '../services/admin-products.serv
 const router = Router()
 router.use(requireAuth, requireRole('admin'))
 
-router.post('/admin/products', validate(adminProductSchema), async (req, res) => {
+router.post('/products', validate(adminProductSchema), async (req, res) => {
   res.status(201).json(await service.save(null, req.body))
 })
 router.put(
-  '/admin/products/:id',
+  '/products/:id',
   validate(resourceParamsSchema, 'params'),
   validate(adminProductSchema),
   async (req, res) => {
     res.json(await service.save(req.validatedParams.id, req.body))
   },
 )
-router.delete('/admin/products/:id', validate(resourceParamsSchema, 'params'), async (req, res) => {
+router.delete('/products/:id', validate(resourceParamsSchema, 'params'), async (req, res) => {
   res.json(await service.deactivate(req.validatedParams.id))
 })
 router.patch(
-  '/admin/variants/:id',
+  '/variants/:id',
   validate(resourceParamsSchema, 'params'),
   validate(stockSchema),
   async (req, res) => {
@@ -39,7 +39,7 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0, parts: 1 },
 }).single('file')
 router.post(
-  '/admin/uploads',
+  '/uploads',
   (req, res, next) => {
     upload(req, res, (error) => {
       if (error)
