@@ -13,18 +13,43 @@ export const cartService = {
           id,
           name,
           stock,
-          price,
           products (
             id,
             name,
-            images
+            price,
+            offer_price,
+            images,
+            slug
           )
         )
       `)
       .eq('user_id', userId)
 
     if (error) throw error
-    return data
+
+    // Mapeamos los datos para que tengan la estructura exacta que espera el store del frontend
+    return (data || []).map(item => {
+      const variant = item.product_variants || {}
+      const product = variant.products || {}
+      
+      // Manejo seguro de imágenes (si es array o string)
+      let imageUrl = ''
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        imageUrl = product.images[0]
+      } else if (typeof product.images === 'string') {
+        imageUrl = product.images
+      }
+
+      return {
+        variantId: item.variant_id,
+        productId: product.id,
+        name: product.name || 'Producto',
+        variantName: variant.name || '',
+        price: product.offer_price ?? product.price ?? 0, // Usa offer_price si existe, sino price
+        image: imageUrl,
+        quantity: item.quantity
+      }
+    })
   },
 
   // Reemplazar / Actualizar el carrito completo del usuario
@@ -46,13 +71,14 @@ export const cartService = {
       quantity: item.quantity
     }))
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('cart_items')
       .insert(formattedItems)
-      .select()
 
     if (insertError) throw insertError
-    return data
+
+    // Como pidió tu compañero, devolvemos getCart() para que devuelva la estructura ya mapeada correctamente
+    return await this.getCart(userId)
   },
 
   // Fusionar el carrito local de localStorage con el de la BD al iniciar sesión
@@ -63,7 +89,7 @@ export const cartService = {
     const mergedMap = new Map()
 
     dbCart.forEach(item => {
-      mergedMap.set(item.variant_id, item.quantity)
+      mergedMap.set(item.variantId, item.quantity)
     })
 
     localItems.forEach(localItem => {

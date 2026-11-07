@@ -3,12 +3,10 @@ import { ref, computed, watch } from 'vue'
 import { api } from '@/services/api'
 
 export const useCartStore = defineStore('cart', () => {
-  // Estado inicial: recupera del localStorage si existe, sino empieza vacío
   const savedCart = localStorage.getItem('full-tech-cart')
   const items = ref(savedCart ? JSON.parse(savedCart) : [])
   const isOpen = ref(false)
 
-  // Bandera para saber si el usuario está autenticado y sincronizar con la BD
   const isSyncedWithBackend = ref(false)
 
   // Persistencia automática con LocalStorage y sincronización con la API si corresponde
@@ -19,7 +17,7 @@ export const useCartStore = defineStore('cart', () => {
       
       if (isSyncedWithBackend.value) {
         try {
-          await api.put('/cart', { items: newItems })
+          await api.put('/cart', { items: newItems }, { auth: true })
         } catch (error) {
           console.error('Error al sincronizar el carrito con la BD:', error)
         }
@@ -44,11 +42,11 @@ export const useCartStore = defineStore('cart', () => {
       const localItems = [...items.value]
 
       if (localItems.length > 0) {
-        const response = await api.post('/cart/merge', { items: localItems })
-        items.value = response.data
+        const response = await api.post('/cart/merge', { items: localItems }, { auth: true })
+        items.value = response.data ?? response
       } else {
-        const response = await api.get('/cart')
-        items.value = response.data
+        const response = await api.get('/cart', { auth: true })
+        items.value = response.data ?? response
       }
     } catch (error) {
       console.error('Error al inicializar la sincronización del carrito:', error)
@@ -93,6 +91,10 @@ export const useCartStore = defineStore('cart', () => {
     isOpen.value = false
   }
 
+  function toggleCart() {
+    isOpen.value = !isOpen.value
+  }
+
   return {
     items,
     isOpen,
@@ -104,6 +106,7 @@ export const useCartStore = defineStore('cart', () => {
     clearCart,
     open,
     close,
+    toggleCart,
     initCartSync,
     stopCartSync
   }
