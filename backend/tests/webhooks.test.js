@@ -169,6 +169,18 @@ describe('POST /api/webhooks/mercadopago', () => {
     expect(ordersUpdate).not.toHaveBeenCalled()
   })
 
+  it('pago aprobado de un pedido ya vencido no lo revive y lo registra para reembolso', async () => {
+    setup({ found: { ...order, status: 'cancelado' } })
+    const res = await notify()
+    expect(res.status).toBe(200)
+    expect(ordersUpdate).not.toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('cancelado'),
+      order.tracking_code,
+      expect.objectContaining({ paymentId: '123456789' }),
+    )
+  })
+
   it.each(['rejected', 'cancelled', 'pending', 'in_process'])(
     'pago %s no modifica el pedido',
     async (status) => {

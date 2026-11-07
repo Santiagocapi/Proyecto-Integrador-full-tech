@@ -86,6 +86,15 @@ export async function handleMercadoPagoNotification({ query = {}, headers = {}, 
   // Rechazado, pendiente, etc.: el pedido sigue pendiente para que el comprador reintente
   if (payment.status !== 'approved') return RECEIVED
 
+  // El pedido venció y ya devolvió su stock: no se revive. Queda registrado para reembolsar a mano.
+  if (order.status === 'cancelado') {
+    console.error('Pago aprobado de un pedido cancelado, requiere reembolso', order.tracking_code, {
+      paymentId: String(payment.id),
+      amount: payment.transaction_amount,
+    })
+    return RECEIVED
+  }
+
   if (!matchesOrder(payment, order)) {
     console.error('Pago aprobado que no coincide con el pedido', order.tracking_code, {
       paymentId: String(payment.id),
