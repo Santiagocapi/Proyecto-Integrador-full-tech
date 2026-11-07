@@ -49,3 +49,10 @@ export const validatePhone = (value) => {
   if (!isPhone(value)) return 'El formato del teléfono no es válido'
   return ''
 }
+
+// Código postal argentino: 4 dígitos o CPA (ej. C1425ABC). Se compara en mayúsculas
+// porque el backend sólo acepta el CPA en mayúsculas y el formulario lo normaliza al enviar.
+export const isZip = (value) => {
+  if (!isRequired(value)) return false
+  return /^(\d{4}|[A-Z]\d{4}[A-Z]{3})$/.test(String(value).trim().toUpperCase())
+}

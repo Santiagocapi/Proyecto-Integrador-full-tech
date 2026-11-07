@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   server: {
+    // Permite abrir el servidor de desarrollo a través de un túnel de Cloudflare (pruebas de Mercado Pago)
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': {
         target: 'http://localhost:3000', // Asegurate de que coincida con el puerto de tu backend
