@@ -1,6 +1,6 @@
 // Integración con Mercado Pago Checkout Pro. El SDK queda aislado en este módulo
 // para que el resto de la API (y los tests) no dependan de él.
-import { MercadoPagoConfig, Preference } from 'mercadopago'
+import { MercadoPagoConfig, Payment, Preference } from 'mercadopago'
 import { env } from '../config/env.js'
 
 // La preferencia vence a los 30 minutos: después el pedido pendiente se puede cancelar.
@@ -44,13 +44,17 @@ export function buildPreferenceBody(
   return body
 }
 
-// Crea la preferencia en Mercado Pago y devuelve { id, init_point }.
-export async function createPreference({ order, items, payerEmail }) {
+// Cliente del SDK; falla con un error claro si no hay token configurado
+function createClient() {
   if (!env.MP_ACCESS_TOKEN) {
     throw new Error('Falta configurar MP_ACCESS_TOKEN para cobrar con Mercado Pago')
   }
+  return new MercadoPagoConfig({ accessToken: env.MP_ACCESS_TOKEN })
+}
 
-  const client = new MercadoPagoConfig({ accessToken: env.MP_ACCESS_TOKEN })
+// Crea la preferencia en Mercado Pago y devuelve { id, init_point }.
+export async function createPreference({ order, items, payerEmail }) {
+  const client = createClient()
   const preference = await new Preference(client).create({
     body: buildPreferenceBody({ order, items, payerEmail }),
     // Evita crear dos preferencias para el mismo pedido si el SDK reintenta
@@ -58,4 +62,9 @@ export async function createPreference({ order, items, payerEmail }) {
   })
 
   return { id: preference.id, init_point: preference.init_point }
+}
+
+// Consulta un pago en Mercado Pago. Es la fuente de verdad: el webhook solo avisa que algo cambió.
+export async function getPayment(id) {
+  return new Payment(createClient()).get({ id })
 }

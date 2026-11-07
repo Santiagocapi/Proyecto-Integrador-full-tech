@@ -1,7 +1,24 @@
-import { describe, expect, it, vi } from 'vitest'
-import { buildPreferenceBody } from '../src/services/mercadopago.service.js'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { buildPreferenceBody, getPayment } from '../src/services/mercadopago.service.js'
 
 vi.mock('../src/config/supabase.js', () => ({ supabase: {} }))
+
+// env mutable para probar con y sin token, sin depender del .env local
+const env = vi.hoisted(() => ({ FRONTEND_URL: 'http://localhost:5173' }))
+vi.mock('../src/config/env.js', () => ({ env }))
+
+// Solo se reemplazan los clientes HTTP del SDK; el resto queda real
+const paymentGet = vi.hoisted(() => vi.fn())
+vi.mock('mercadopago', async (importOriginal) => ({
+  ...(await importOriginal()),
+  MercadoPagoConfig: vi.fn(function (options) {
+    this.options = options
+  }),
+  Payment: vi.fn(function () {
+    return { get: paymentGet }
+  }),
+}))
 
 const order = { id: '42', tracking_code: 'FT-ABC234', status: 'pendiente', total: 150.5 }
 const items = [
@@ -59,5 +76,28 @@ describe('Cuerpo de la preferencia de Mercado Pago', () => {
       { frontendUrl: 'https://tienda.com', apiPublicUrl: 'http://localhost:3000', now },
     )
     expect(body).not.toHaveProperty('notification_url')
+  })
+})
+
+describe('Consulta de un pago en Mercado Pago', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    env.MP_ACCESS_TOKEN = 'TEST-token'
+  })
+
+  it('pide el pago por id con el access token configurado', async () => {
+    const payment = { id: 123, status: 'approved' }
+    paymentGet.mockResolvedValue(payment)
+
+    await expect(getPayment('123')).resolves.toEqual(payment)
+    expect(MercadoPagoConfig).toHaveBeenCalledWith({ accessToken: 'TEST-token' })
+    expect(Payment).toHaveBeenCalledWith(MercadoPagoConfig.mock.instances[0])
+    expect(paymentGet).toHaveBeenCalledWith({ id: '123' })
+  })
+
+  it('falla con un error claro si falta MP_ACCESS_TOKEN', async () => {
+    env.MP_ACCESS_TOKEN = undefined
+    await expect(getPayment('123')).rejects.toThrow('MP_ACCESS_TOKEN')
+    expect(paymentGet).not.toHaveBeenCalled()
   })
 })
