@@ -11,7 +11,8 @@ const { success, error: toastError } = useToast()
 
 // La misma vista sirve para /admin/productos/nuevo y /admin/productos/:id
 const productId = computed(() => route.params.id)
-const isEdit = computed(() => !!productId.value)
+const productSlug = computed(() => route.params.slug)
+const isEdit = computed(() => !!productSlug.value)
 
 const CONNECTION_SUGGESTIONS = ['USB', 'XLR', 'Lightning', 'USB-C', 'Inalámbrico']
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -94,7 +95,7 @@ async function load() {
     categories.value = Array.isArray(catRes) ? catRes : (catRes.items ?? [])
 
     if (isEdit.value) {
-      const product = await api.get(`/admin/products/${productId.value}`, { auth: true })
+      const product = await api.get(`/products/${productSlug.value}`, { auth: true })
       fillForm(product)
       slugTouched.value = true
     } else {

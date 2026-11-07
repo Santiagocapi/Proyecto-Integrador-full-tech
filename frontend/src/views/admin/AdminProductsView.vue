@@ -31,7 +31,7 @@ async function load() {
   try {
     const params = new URLSearchParams({ page: String(page.value), limit: '10' })
     if (q.value.trim()) params.set('q', q.value.trim())
-    const res = await api.get(`/admin/products?${params}`, { auth: true })
+    const res = await api.get(`/products?${params}`, { auth: true })
     items.value = res.items
     total.value = res.total
     page.value = res.page
@@ -228,7 +228,7 @@ async function confirmDeactivate() {
               </td>
               <td data-label="Acciones">
                 <div class="actions">
-                  <RouterLink class="adm-btn" :to="`/admin/productos/${p.id}`">Editar</RouterLink>
+                  <RouterLink class="adm-btn" :to="`/admin/productos/${p.id}/${p.slug}`">Editar</RouterLink>
                   <button
                     v-if="p.active"
                     type="button"
