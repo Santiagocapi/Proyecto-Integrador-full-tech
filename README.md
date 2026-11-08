@@ -220,7 +220,7 @@ Las variables privadas de entorno se configuran desde el panel de Render.
 
 ### Frontend – Vercel
 
-El despliegue del frontend se realizará mediante Vercel.
+El frontend se encuentra desplegado en Vercel.
 
 Configuración prevista:
 
@@ -238,7 +238,9 @@ Variables de entorno necesarias:
 
 - `VITE_SUPABASE_ANON_KEY`
 
-La URL pública del frontend se incorporará una vez finalizado el despliegue.
+URL de producción:
+
+https://proyecto-integrador-full-tech.vercel.app
 
 ## Integrantes
 
