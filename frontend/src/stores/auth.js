@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
         if (requestId !== this.profileRequest || this.user?.id !== userId) return
 
         this.profile = profileData.id === userId ? profileData : null
-      } catch (catchError) {
+      } catch {
         if (requestId === this.profileRequest && this.user?.id === userId) this.profile = null
       }
     },
