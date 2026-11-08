@@ -108,7 +108,7 @@
 
     <span class="order-tracking">
       Nº Seguimiento:
-      <strong>{{ order.tracking_number || order.id }}</strong>
+      <strong>{{ order.tracking_code || order.id }}</strong>
     </span>
 
     <span class="order-total">
@@ -134,16 +134,26 @@
     class="order-details"
   >
     <h3>Detalle del pedido</h3>
-    <p>Pedido Nº {{ order.tracking_number || order.id }}</p>
+    <p>Pedido Nº {{ order.tracking_code || order.id }}</p>
     <p>Fecha: {{ formatDate(order.created_at) }}</p>
     <p>Estado: {{ order.status }}</p>
     <p>Total: ${{ order.total }}</p>
-  </div>
-</div>
-        </div>
-      </section>
+
+    <!--Se agrego la lista items que trae el pedido-->
+    <div v-if="order.items && order.items.length" class="order-items-List">
+      <h4>Productos:</h4>
+      <ul>
+        <li v-for="item in order.items" :key="item.id">
+          {{ item.title }} (cantidad: {{ item.quantity }}) - ${{ item.price }}
+        </li>
+      </ul>
     </div>
   </div>
+</div>
+</div>
+</section>
+</div>
+</div>
 </template>
 
 <script setup>
