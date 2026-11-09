@@ -4,9 +4,25 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { formatPrice } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
 
 const cartStore = useCartStore()
 const router = useRouter()
+const toast = useToast()
+function changeQuantity(item, quantity) {
+  try {
+    cartStore.updateQuantity(item.variantId, quantity)
+  } catch (error) {
+    toast.error(error.message)
+  }
+}
+async function retry() {
+  try {
+    await cartStore.retrySync()
+  } catch (error) {
+    toast.error(error.message)
+  }
+}
 
 const goToCheckout = () => {
   cartStore.close()
@@ -52,9 +68,11 @@ onUnmounted(() => {
       </header>
 
       <div class="cart-drawer__body">
-        <p v-if="cartStore.items.length === 0" class="cart-drawer__empty">
-          Tu carrito está vacío.
+        <p v-if="cartStore.syncError" role="alert">
+          {{ cartStore.syncError }}
+          <button type="button" @click="retry">Reintentar guardado</button>
         </p>
+        <p v-if="cartStore.items.length === 0" class="cart-drawer__empty">Tu carrito está vacío.</p>
 
         <ul v-else class="cart-drawer__items">
           <li v-for="item in cartStore.items" :key="item.variantId" class="cart-item">
@@ -79,7 +97,7 @@ onUnmounted(() => {
                     class="cart-item__qty-btn"
                     :disabled="item.quantity <= 1"
                     :aria-label="`Restar una unidad de ${item.name}`"
-                    @click="cartStore.updateQuantity(item.variantId, item.quantity - 1)"
+                    @click="changeQuantity(item, item.quantity - 1)"
                   >
                     −
                   </button>
@@ -87,8 +105,11 @@ onUnmounted(() => {
                   <button
                     type="button"
                     class="cart-item__qty-btn"
+                    :disabled="
+                      cartStore.isSyncing || (item.stock != null && item.quantity >= item.stock)
+                    "
                     :aria-label="`Sumar una unidad de ${item.name}`"
-                    @click="cartStore.updateQuantity(item.variantId, item.quantity + 1)"
+                    @click="changeQuantity(item, item.quantity + 1)"
                   >
                     +
                   </button>
@@ -113,7 +134,12 @@ onUnmounted(() => {
           <span class="cart-drawer__subtotal-value">{{ formatPrice(cartStore.subtotal) }}</span>
         </div>
 
-        <BaseButton size="lg" block :disabled="cartStore.items.length === 0" @click="goToCheckout">
+        <BaseButton
+          size="lg"
+          block
+          :disabled="cartStore.items.length === 0 || cartStore.isSyncing || !!cartStore.syncError"
+          @click="goToCheckout"
+        >
           Finalizar compra
         </BaseButton>
       </footer>
@@ -174,7 +200,9 @@ onUnmounted(() => {
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: color var(--transition-fast), background-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .cart-drawer__close:hover {

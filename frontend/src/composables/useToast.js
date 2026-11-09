@@ -1,19 +1,26 @@
 import { ref } from 'vue'
 
 const toasts = ref([])
+let nextId = 0
+const timers = new Map()
 
 export function useToast() {
   const showToast = (message, type = 'success', duration = 3000) => {
-    const id = Date.now()
+    const id = ++nextId
     toasts.value.push({ id, message, type })
 
-    setTimeout(() => {
-      removeToast(id)
-    }, duration)
+    timers.set(
+      id,
+      setTimeout(() => {
+        removeToast(id)
+      }, duration),
+    )
   }
 
   const removeToast = (id) => {
-    toasts.value = toasts.value.filter(t => t.id !== id)
+    clearTimeout(timers.get(id))
+    timers.delete(id)
+    toasts.value = toasts.value.filter((t) => t.id !== id)
   }
 
   return {
@@ -22,6 +29,6 @@ export function useToast() {
     removeToast,
     success: (msg) => showToast(msg, 'success'),
     error: (msg) => showToast(msg, 'error'),
-    info: (msg) => showToast(msg, 'info')
+    info: (msg) => showToast(msg, 'info'),
   }
 }

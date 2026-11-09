@@ -10,12 +10,15 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method, path, { body, auth = false } = {}) {
+async function request(method, path, { body, auth = false, userId } = {}) {
   const isFormData = body instanceof FormData
   const headers = isFormData ? {} : { 'Content-Type': 'application/json' }
 
   if (auth) {
     const { data } = await supabase.auth.getSession()
+    if (userId && data.session?.user?.id !== userId) {
+      throw new ApiError(401, 'La sesión cambió; volvé a cargar el carrito')
+    }
     const token = data.session?.access_token
     if (token) headers.Authorization = `Bearer ${token}`
   }

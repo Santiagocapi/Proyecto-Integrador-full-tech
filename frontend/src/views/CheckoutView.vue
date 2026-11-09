@@ -91,6 +91,7 @@ async function confirmOrder() {
   }
 
   try {
+    await cart.flushSync()
     const order = await api.post('/orders', payload, { auth: true })
     // El servidor ya vació el carrito en la BD: vaciamos el local antes de salir
     // para que la sincronización no vuelva a subir los ítems viejos

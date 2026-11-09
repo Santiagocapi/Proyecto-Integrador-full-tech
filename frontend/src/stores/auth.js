@@ -43,11 +43,14 @@ export const useAuthStore = defineStore('auth', {
         this.user = data.session?.user ?? null
 
         if (this.user) {
+          const userId = this.user.id
           await this.fetchProfile()
+          if (this.user?.id !== userId) return
           const cartStore = useCartStore()
-          await cartStore.initCartSync()
+          await cartStore.initCartSync(userId)
         } else {
           this.profile = null
+          useCartStore().resetForGuest()
         }
 
         if (!authSubscription) {
@@ -56,9 +59,13 @@ export const useAuthStore = defineStore('auth', {
             this.profile = null
             ++this.profileRequest
             if (this.user) {
+              const userId = this.user.id
               // La consulta espera a que Supabase libere el bloqueo de sesión.
               setTimeout(() => {
-                if (this.user) void this.fetchProfile()
+                if (this.user?.id === userId) {
+                  void this.fetchProfile()
+                  void useCartStore().initCartSync(userId)
+                }
               }, 0)
             } else {
               this.profile = null
@@ -84,11 +91,12 @@ export const useAuthStore = defineStore('auth', {
       }
 
       this.user = data.user
+      const userId = data.user.id
       await this.fetchProfile()
 
       // Sincronizar y fusionar el carrito al iniciar sesión
       const cartStore = useCartStore()
-      await cartStore.initCartSync()
+      if (this.user?.id === userId) await cartStore.initCartSync(userId)
 
       return this.profile
     },

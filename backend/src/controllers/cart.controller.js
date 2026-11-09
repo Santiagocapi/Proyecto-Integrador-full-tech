@@ -25,11 +25,11 @@ export const cartController = {
   async merge(req, res, next) {
     try {
       const userId = req.user.id
-      const { items } = req.body
-      const mergedCart = await cartService.mergeCart(userId, items || [])
+      const { items, mergeId } = req.body
+      const mergedCart = await cartService.mergeCart(userId, items, mergeId)
       res.json(mergedCart)
     } catch (error) {
       next(error)
     }
-  }
+  },
 }

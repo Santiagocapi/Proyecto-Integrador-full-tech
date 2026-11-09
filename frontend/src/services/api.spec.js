@@ -72,4 +72,12 @@ describe('Transporte de la API', () => {
     }
     expect(await api.put('/admin/products/3', product)).toEqual(product)
   })
+  it('no manda guardados de un carrito con la sesión de otra cuenta', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    try {
+      await expect(api.put('/cart', { items: [] }, { auth: true, userId: 'otra-cuenta' }))
+        .rejects.toMatchObject({ status: 401 })
+      expect(fetchSpy).not.toHaveBeenCalled()
+    } finally { fetchSpy.mockRestore() }
+  })
 })
