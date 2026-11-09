@@ -17,6 +17,7 @@ Si falta la migración, la API devuelve 503 con un mensaje explícito; no intent
 - Cierre/cambio de sesión: se limpia la copia local y se ignoran cargas y guardados pendientes de la cuenta anterior. Su carrito en Supabase se conserva.
 - Cantidades: enteros positivos y variantes únicas, con límite de stock en el cliente y en PostgreSQL. La fusión limita cantidades al stock y omite variantes agotadas o productos inactivos.
 - Guardado: escrituras del navegador en orden; la base reemplaza todo en una transacción. Un fallo revierte el borrado y la inserción.
+- Si se recarga antes de recibir la confirmación, se conserva una marca local de cambios pendientes y se reintenta el reemplazo para la misma cuenta, sin volver a fusionar.
 - Checkout: espera los guardados pendientes y detiene la compra si el carrito no pudo sincronizarse.
 - Errores de sincronización: se muestran en el panel del carrito y se pueden reintentar.
 
@@ -34,3 +35,7 @@ Si falta la migración, la API devuelve 503 con un mensaje explícito; no intent
 - `frontend`: `npx vitest run`, `npx eslint .`, `npm run build`.
 - `backend`: `npm test`, `npm run lint`.
 - `backend/tests/cart.database.test.js` ejecuta el SQL real en PostgreSQL local aislado: rollback, stock, fusión idempotente y permisos. No modifica Supabase.
+
+## Verificación del 9 de noviembre de 2026
+
+La migración 012 quedó instalada en el proyecto FULL-TECH. Se comprobó guardado, rechazo de exceso de stock y fusión idempotente con `service_role` dentro de una transacción revertida por completo. Se conservaron los 20 productos y 3 pedidos existentes. También se agregó un producto al carrito desde la tienda, se recuperó tras recargar sin duplicarlo y se retiró el ítem de prueba.

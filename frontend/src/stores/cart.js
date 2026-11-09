@@ -46,6 +46,7 @@ export const useCartStore = defineStore('cart', () => {
   const isSyncing = ref(false)
   const syncError = ref('')
   let owner = read(`${KEY}-owner`)
+  let dirty = read(`${KEY}-dirty`) === '1'
   let sessionUser = null
   let syncedUser = null
   let generation = 0
@@ -57,6 +58,7 @@ export const useCartStore = defineStore('cart', () => {
   function persist() {
     write(KEY, JSON.stringify(items.value))
     write(`${KEY}-owner`, owner)
+    write(`${KEY}-dirty`, dirty ? '1' : null)
   }
   function applyServer(value) {
     applying = true
@@ -74,7 +76,10 @@ export const useCartStore = defineStore('cart', () => {
       try {
         const response = await api.put('/cart', { items: snapshot }, { auth: true, userId })
         if (epoch !== generation) return
-        if (version === revision) applyServer(response)
+        if (version === revision) {
+          dirty = false
+          applyServer(response)
+        }
         syncError.value = ''
       } catch (error) {
         if (epoch === generation) syncError.value = error.message || 'No se pudo guardar el carrito'
@@ -86,6 +91,7 @@ export const useCartStore = defineStore('cart', () => {
     () => {
       if (applying) return
       revision++
+      dirty = true
       persist()
       if (syncedUser) save()
     },
@@ -104,6 +110,7 @@ export const useCartStore = defineStore('cart', () => {
   function stopCartSync() {
     generation++
     syncedUser = sessionUser = owner = null
+    dirty = false
     initPromise = null
     isSyncing.value = false
     syncError.value = ''
@@ -129,7 +136,10 @@ export const useCartStore = defineStore('cart', () => {
     initPromise = (async () => {
       try {
         let response
-        if (guests.length) {
+        if (owner === userId && dirty) {
+          // Una recarga antes de recibir la confirmación no debe descartar cambios locales.
+          response = await api.put('/cart', { items: payload(items.value) }, { auth: true, userId })
+        } else if (guests.length) {
           // Reutilizar esta clave permite reintentar una respuesta perdida sin sumar dos veces.
           const mergeId = read(`${KEY}-merge-id`) ?? crypto.randomUUID()
           write(`${KEY}-merge-id`, mergeId)
@@ -143,6 +153,7 @@ export const useCartStore = defineStore('cart', () => {
         }
         if (epoch !== generation) return
         owner = syncedUser = userId
+        dirty = false
         applyServer(response)
         write(`${KEY}-merge-id`, null)
       } catch (error) {
