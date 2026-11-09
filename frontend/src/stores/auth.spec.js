@@ -4,6 +4,12 @@ import { useAuthStore } from './auth'
 import { api } from '@/services/api'
 import { supabase } from '@/lib/supabase'
 
+vi.mock('./cart', () => ({
+  useCartStore: () => ({
+    clearCart: vi.fn(),
+    stopCartSync: vi.fn(),
+  }),
+}))
 vi.mock('@/services/api', () => ({ api: { get: vi.fn() } }))
 vi.mock('@/lib/supabase', () => ({ supabase: { auth: { signOut: vi.fn() } } }))
 const deferred = () => {

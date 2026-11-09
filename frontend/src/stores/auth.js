@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { supabase } from '@/lib/supabase'
 import { api } from '@/services/api'
+import { useCartStore } from '@/stores/cart'
 
 let initPromise = null
 let authSubscription = null
@@ -25,11 +26,10 @@ export const useAuthStore = defineStore('auth', {
       if (!userId) return
       try {
         const profileData = await api.get('/auth/me', { auth: true })
-
         // Si el usuario cerró sesión mientras la petición estaba en curso, descartamos el resultado
         if (requestId !== this.profileRequest || this.user?.id !== userId) return
 
-        this.profile = profileData?.id === userId ? profileData : null
+        this.profile = profileData.id === userId ? profileData : null
       } catch {
         if (requestId === this.profileRequest && this.user?.id === userId) this.profile = null
       }
@@ -43,9 +43,14 @@ export const useAuthStore = defineStore('auth', {
         this.user = data.session?.user ?? null
 
         if (this.user) {
+          const userId = this.user.id
           await this.fetchProfile()
+          if (this.user?.id !== userId) return
+          const cartStore = useCartStore()
+          await cartStore.initCartSync(userId)
         } else {
           this.profile = null
+          useCartStore().resetForGuest()
         }
 
         if (!authSubscription) {
@@ -54,12 +59,18 @@ export const useAuthStore = defineStore('auth', {
             this.profile = null
             ++this.profileRequest
             if (this.user) {
+              const userId = this.user.id
               // La consulta espera a que Supabase libere el bloqueo de sesión.
               setTimeout(() => {
-                if (this.user) void this.fetchProfile()
+                if (this.user?.id === userId) {
+                  void this.fetchProfile()
+                  void useCartStore().initCartSync(userId)
+                }
               }, 0)
             } else {
               this.profile = null
+              const cartStore = useCartStore()
+              cartStore.stopCartSync()
             }
           })
           authSubscription = listener?.subscription
@@ -80,7 +91,13 @@ export const useAuthStore = defineStore('auth', {
       }
 
       this.user = data.user
+      const userId = data.user.id
       await this.fetchProfile()
+
+      // Sincronizar y fusionar el carrito al iniciar sesión
+      const cartStore = useCartStore()
+      if (this.user?.id === userId) await cartStore.initCartSync(userId)
+
       return this.profile
     },
 
@@ -93,6 +110,11 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.profile = null
       ++this.profileRequest
+
+      // Detener la sincronización del carrito al salir
+      const cartStore = useCartStore()
+      cartStore.stopCartSync()
+
       const { error } = await supabase.auth.signOut()
       if (error) throw error
     },

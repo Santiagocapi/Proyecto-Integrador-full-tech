@@ -1,46 +1,28 @@
-
 <script setup>
-import { ref, onMounted } from 'vue'
-import ProductCard from '@/components/product/ProductCard.vue'
-import { api } from '@/services/api'
-
-const products = ref([])
-const loading = ref(true)
-const error = ref('')
-
-onMounted(async () => {
-  try {
-    const response = await api.get('/products?limit=20')
-
-    products.value = response.items.map((product) => ({
-      ...product,
-      category: product.categories,
-    }))
-  } catch (err) {
-    error.value = err.message || 'No se pudieron cargar los productos.'
-    console.error('Error al cargar productos:', err)
-  } finally {
-    loading.value = false
-  }
-})
+// Home: une las secciones en el orden del diseño.
+import HeroBanner from '@/components/home/HeroBanner.vue'
+import CategoryGrid from '@/components/home/CategoryGrid.vue'
+import FeaturedKits from '@/components/home/FeaturedKits.vue'
+import NewArrivals from '@/components/home/NewArrivals.vue'
+import ValueProps from '@/components/home/ValueProps.vue'
 </script>
 
 <template>
-  <div class="container section">
-    <p v-if="loading">Cargando productos...</p>
-
-    <p v-else-if="error">
-      {{ error }}
-    </p>
-
-    <div v-else-if="products.length" class="grid-products">
-      <ProductCard
-        v-for="product in products"
-        :key="product.slug"
-        :product="product"
-      />
-    </div>
-
-    <p v-else>No hay productos disponibles.</p>
+  <div class="home">
+    <HeroBanner />
+    <CategoryGrid />
+    <FeaturedKits />
+    <NewArrivals />
+    <ValueProps />
   </div>
 </template>
+
+<style scoped>
+/* Separación pareja entre todas las secciones de la Home */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  padding-bottom: var(--space-7);
+}
+</style>

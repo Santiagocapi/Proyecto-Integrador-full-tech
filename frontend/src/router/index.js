@@ -120,4 +120,12 @@ router.beforeEach(async (to) => {
   }
 })
 
+// Título de la pestaña según la ruta, por ejemplo "Catálogo · FULL-TECH"
+router.afterEach((to) => {
+  document.title =
+    to.name === 'home' || !to.meta.title
+      ? 'FULL-TECH · Equipamiento para creadores'
+      : `${to.meta.title} · FULL-TECH`
+})
+
 export default router

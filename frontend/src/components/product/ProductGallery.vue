@@ -113,6 +113,7 @@ watch(() => props.images, (newImages) => {
   align-items: center;
   justify-content: center;
   width: 100%;
+  max-height: 480px;
   aspect-ratio: 1 / 1;
   min-width: 0;
   overflow: hidden;
@@ -126,8 +127,10 @@ watch(() => props.images, (newImages) => {
 
 .product-gallery__image {
   display: block;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   padding: 22px;
   object-fit: contain;
   transition: transform 0.3s ease;
