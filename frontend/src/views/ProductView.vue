@@ -190,10 +190,9 @@ function increaseQuantity() {
     quantity.value++
   }
 }
-
 // Agregar al carrito
 function handleAddToCart() {
-  if (!product.value || !selectedVariant.value) {
+  if (!selectedVariant.value) {
     toast.error('Seleccioná una variante del producto.')
     return
   }
@@ -222,11 +221,11 @@ function handleAddToCart() {
       quantity.value
     )
 
-    toast.success(
+   toast.success(
       `${product.value.name} agregado al carrito.`
     )
 
-    cart.open()
+    cart.open() 
   } catch (err) {
     console.error('Error al agregar al carrito:', err)
     toast.error('No se pudo agregar el producto al carrito.')

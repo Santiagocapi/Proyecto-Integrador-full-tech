@@ -1,34 +1,113 @@
 import { defineStore } from 'pinia'
+import { ref, computed, watch } from 'vue'
+import { api } from '@/services/api'
 
-// TODO (Dolo): persistir en LocalStorage y sincronizar con la API manteniendo esta interfaz.
-// Aca va la store del carrito de compras, que maneja el estado de los items en el carrito y si está abierto o cerrado. Se puede usar para agregar, actualizar, eliminar y limpiar items, así como para abrir y cerrar el carrito.
-export const useCartStore = defineStore('cart', {
-  state: () => ({ items: [], isOpen: false }),
-  getters: {
-    count: (state) => state.items.reduce((total, item) => total + item.quantity, 0),
-    subtotal: (state) => state.items.reduce((total, item) => total + item.price * item.quantity, 0),
-  },
-  actions: {
-    addItem(item, qty = 1) {
-      const existing = this.items.find((i) => i.variantId === item.variantId)
-      if (existing) existing.quantity += qty
-      else this.items.push({ ...item, quantity: qty })
+export const useCartStore = defineStore('cart', () => {
+  const savedCart = localStorage.getItem('full-tech-cart')
+  const items = ref(savedCart ? JSON.parse(savedCart) : [])
+  const isOpen = ref(false)
+
+  const isSyncedWithBackend = ref(false)
+
+  // Persistencia automática con LocalStorage y sincronización con la API si corresponde
+  watch(
+    items,
+    async (newItems) => {
+      localStorage.setItem('full-tech-cart', JSON.stringify(newItems))
+      
+      if (isSyncedWithBackend.value) {
+        try {
+          await api.put('/cart', { items: newItems }, { auth: true })
+        } catch (error) {
+          console.error('Error al sincronizar el carrito con la BD:', error)
+        }
+      }
     },
-    updateQuantity(variantId, qty) {
-      const item = this.items.find((i) => i.variantId === variantId)
-      if (item) item.quantity = qty
-    },
-    removeItem(variantId) {
-      this.items = this.items.filter((i) => i.variantId !== variantId)
-    },
-    clear() {
-      this.items = []
-    },
-    open() {
-      this.isOpen = true
-    },
-    close() {
-      this.isOpen = false
-    },
-  },
+    { deep: true }
+  )
+
+  // Getters (cantidad total y subtotal)
+  const count = computed(() => {
+    return items.value.reduce((total, item) => total + item.quantity, 0)
+  })
+
+  const subtotal = computed(() => {
+    return items.value.reduce((total, item) => total + (item.price * item.quantity), 0)
+  })
+
+  // Sincronización y fusión con el backend al iniciar sesión
+  async function initCartSync() {
+    try {
+      isSyncedWithBackend.value = true
+      const localItems = [...items.value]
+
+      if (localItems.length > 0) {
+        const response = await api.post('/cart/merge', { items: localItems }, { auth: true })
+        items.value = response.data ?? response
+      } else {
+        const response = await api.get('/cart', { auth: true })
+        items.value = response.data ?? response
+      }
+    } catch (error) {
+      console.error('Error al inicializar la sincronización del carrito:', error)
+    }
+  }
+
+  function stopCartSync() {
+    isSyncedWithBackend.value = false
+  }
+
+  // Acciones
+  function addItem(product, qty = 1) {
+    const existingIndex = items.value.findIndex(i => i.variantId === product.variantId)
+    
+    if (existingIndex > -1) {
+      items.value[existingIndex].quantity += qty
+    } else {
+      items.value.push({ ...product, quantity: qty })
+    }
+  }
+
+  function removeItem(variantId) {
+    items.value = items.value.filter(i => i.variantId !== variantId)
+  }
+
+  function updateQuantity(variantId, qty) {
+    const item = items.value.find(i => i.variantId === variantId)
+    if (item && qty > 0) {
+      item.quantity = qty
+    }
+  }
+
+  function clearCart() {
+    items.value = []
+  }
+
+  function open() {
+    isOpen.value = true
+  }
+
+  function close() {
+    isOpen.value = false
+  }
+
+  function toggleCart() {
+    isOpen.value = !isOpen.value
+  }
+
+  return {
+    items,
+    isOpen,
+    count,
+    subtotal,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    open,
+    close,
+    toggleCart,
+    initCartSync,
+    stopCartSync
+  }
 })
