@@ -67,7 +67,7 @@ watch(
 function fillForm(p) {
   form.name = p.name ?? ''
   form.slug = p.slug ?? ''
-  form.category_id = p.category_id ?? p.category?.id ?? ''
+  form.category_id = p.category_id ?? p.categories?.id ?? p.category?.id ?? ''
   form.description = p.description ?? ''
   form.price = p.price ?? ''
   form.offer_price = p.offer_price ?? ''
@@ -77,8 +77,8 @@ function fillForm(p) {
   form.images = [...(p.images ?? [])]
   form.is_bundle = !!p.is_bundle
   form.active = p.active ?? true
-  form.variants = (p.variants ?? []).map((v) => ({
-    id: v.id,
+  form.variants = (p.product_variants ?? p.variants ?? []).map((v) => ({
+    id: String(v.id),
     name: v.name,
     sku: v.sku,
     stock: v.stock,
@@ -202,7 +202,7 @@ function buildPayload() {
   return {
     name: form.name.trim(),
     slug: form.slug,
-    category_id: Number(form.category_id),
+    category_id: String(form.category_id),
     description: form.description.trim(),
     price: Number(form.price),
     offer_price: form.offer_price === '' || form.offer_price === null ? null : Number(form.offer_price),
@@ -218,7 +218,7 @@ function buildPayload() {
     is_bundle: form.is_bundle,
     active: form.active,
     variants: form.variants.map((v) => ({
-      ...(v.id ? { id: v.id } : {}),
+      ...(v.id ? { id: String(v.id) } : {}),
       name: v.name.trim(),
       sku: v.sku.trim(),
       stock: Number(v.stock),

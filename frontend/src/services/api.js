@@ -11,7 +11,8 @@ export class ApiError extends Error {
 }
 
 async function request(method, path, { body, auth = false } = {}) {
-  const headers = { 'Content-Type': 'application/json' }
+  const isFormData = body instanceof FormData
+  const headers = isFormData ? {} : { 'Content-Type': 'application/json' }
 
   if (auth) {
     const { data } = await supabase.auth.getSession()
@@ -23,7 +24,7 @@ async function request(method, path, { body, auth = false } = {}) {
   try {
     const options = { method, headers }
     if (body !== undefined) {
-      options.body = JSON.stringify(body)
+      options.body = isFormData ? body : JSON.stringify(body)
     }
     res = await fetch(`${BASE_URL}${path}`, options)
   } catch {
@@ -31,7 +32,8 @@ async function request(method, path, { body, auth = false } = {}) {
   }
 
   const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new ApiError(res.status, data?.error ?? 'Ocurrió un error inesperado', data?.details)
+  if (!res.ok)
+    throw new ApiError(res.status, data?.error ?? 'Ocurrió un error inesperado', data?.details)
   return data
 }
 
