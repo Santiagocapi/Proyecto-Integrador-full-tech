@@ -22,8 +22,20 @@ const stockDraft = reactive({})
 const offerDraft = reactive({})
 const saving = reactive({})
 
-const toDeactivate = ref(null)
+// Baja de producto: el modal se abre con v-model (confirmOpen) y el producto se guarda aparte
+const confirmOpen = ref(false)
+const productToDeactivate = ref(null)
 const deactivating = ref(false)
+
+function errorText(e, fallback) {
+  const detail = Array.isArray(e?.details)
+    ? e.details
+        .map((d) => (typeof d === 'string' ? d : d?.message))
+        .filter(Boolean)
+        .join(' · ')
+    : ''
+  return [e?.message || fallback, detail].filter(Boolean).join(' — ')
+}
 
 async function load() {
   loading.value = true
@@ -38,7 +50,7 @@ async function load() {
     pages.value = res.pages
     for (const p of res.items) {
       offerDraft[p.id] = p.offer_price ?? ''
-      for (const v of p.variants ?? []) stockDraft[v.id] = v.stock
+      for (const v of p.product_variants ?? []) stockDraft[v.id] = v.stock
     }
   } catch (e) {
     loadError.value = e.message || 'No se pudieron cargar los productos.'
@@ -65,10 +77,13 @@ function goTo(n) {
 }
 
 const stockDirty = (v) => Number(stockDraft[v.id]) !== v.stock
-const offerValue = (p) => (offerDraft[p.id] === '' || offerDraft[p.id] == null ? null : Number(offerDraft[p.id]))
+const offerValue = (p) =>
+  offerDraft[p.id] === '' || offerDraft[p.id] == null ? null : Number(offerDraft[p.id])
 const offerDirty = (p) => offerValue(p) !== (p.offer_price ?? null)
 
-async function saveStock(v) {
+// Siempre se mandan los dos campos del endpoint (stock y offer_price).
+// El que no se está editando lleva el valor ya guardado.
+async function saveStock(p, v) {
   const n = Number(stockDraft[v.id])
   if (!Number.isInteger(n) || n < 0) {
     toastError('El stock tiene que ser un número entero, 0 o mayor.')
@@ -76,11 +91,15 @@ async function saveStock(v) {
   }
   saving[`v${v.id}`] = true
   try {
-    await api.patch(`/admin/variants/${v.id}`, { stock: n }, { auth: true })
+    await api.patch(
+      `/admin/variants/${v.id}`,
+      { stock: n, offer_price: p.offer_price ?? null },
+      { auth: true },
+    )
     v.stock = n
     success('Stock actualizado.')
   } catch (e) {
-    toastError(e.message || 'No se pudo actualizar el stock.')
+    toastError(errorText(e, 'No se pudo actualizar el stock.'))
   } finally {
     saving[`v${v.id}`] = false
   }
@@ -92,34 +111,44 @@ async function saveOffer(p) {
     toastError('El precio de oferta tiene que ser menor al precio normal.')
     return
   }
-  const firstVariant = p.variants?.[0]
+  // La oferta es del producto, pero el endpoint recibe una variante: se usa la primera
+  const firstVariant = p.product_variants?.[0]
   if (!firstVariant) {
     toastError('Este producto no tiene variantes.')
     return
   }
   saving[`o${p.id}`] = true
   try {
-    await api.patch(`/admin/variants/${firstVariant.id}`, { offer_price: value }, { auth: true })
+    await api.patch(
+      `/admin/variants/${firstVariant.id}`,
+      { stock: firstVariant.stock, offer_price: value },
+      { auth: true },
+    )
     p.offer_price = value
     success('Precio de oferta actualizado.')
   } catch (e) {
-    toastError(e.message || 'No se pudo actualizar el precio de oferta.')
+    toastError(errorText(e, 'No se pudo actualizar el precio de oferta.'))
   } finally {
     saving[`o${p.id}`] = false
   }
 }
 
+function askDeactivate(product) {
+  productToDeactivate.value = product
+  confirmOpen.value = true
+}
+
 async function confirmDeactivate() {
-  const product = toDeactivate.value
+  const product = productToDeactivate.value
   if (!product) return
   deactivating.value = true
   try {
     await api.delete(`/admin/products/${product.id}`, { auth: true })
     success('Producto dado de baja.')
-    toDeactivate.value = null
+    confirmOpen.value = false
     await load()
   } catch (e) {
-    toastError(e.message || 'No se pudo dar de baja el producto.')
+    toastError(errorText(e, 'No se pudo dar de baja el producto.'))
   } finally {
     deactivating.value = false
   }
@@ -180,12 +209,49 @@ async function confirmDeactivate() {
               </td>
               <td data-label="Categoría">{{ p.categories?.name ?? '—' }}</td>
               <td data-label="Precio">{{ formatPrice(p.price) }}</td>
-              <td data-label="Oferta">{{ p.offer_price ? formatPrice(p.offer_price) : "-" }}</td>
+              <td data-label="Oferta">
+                <div class="inline">
+                  <input
+                    v-model="offerDraft[p.id]"
+                    class="adm-input adm-input--sm"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    :aria-label="`Precio de oferta de ${p.name}`"
+                    placeholder="Sin oferta"
+                  />
+                  <button
+                    v-if="offerDirty(p)"
+                    type="button"
+                    class="adm-btn"
+                    :disabled="saving[`o${p.id}`]"
+                    @click="saveOffer(p)"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </td>
               <td data-label="Stock">
                 <ul class="variants">
                   <li v-for="v in p.product_variants" :key="v.id" class="inline">
-                    <span class="variant-name">{{ v.name }}:</span>
-                    {{ v.stock }}
+                    <span class="variant-name">{{ v.name }}</span>
+                    <input
+                      v-model="stockDraft[v.id]"
+                      class="adm-input adm-input--sm"
+                      type="number"
+                      min="0"
+                      step="1"
+                      :aria-label="`Stock de ${p.name}, variante ${v.name}`"
+                    />
+                    <button
+                      v-if="stockDirty(v)"
+                      type="button"
+                      class="adm-btn"
+                      :disabled="saving[`v${v.id}`]"
+                      @click="saveStock(p, v)"
+                    >
+                      Guardar
+                    </button>
                   </li>
                 </ul>
               </td>
@@ -196,7 +262,7 @@ async function confirmDeactivate() {
                     v-if="p.active"
                     type="button"
                     class="adm-btn adm-btn--danger"
-                    @click="toDeactivate = p.active"
+                    @click="askDeactivate(p)"
                   >
                     Dar de baja
                   </button>
@@ -218,17 +284,19 @@ async function confirmDeactivate() {
       </nav>
     </template>
 
-    <BaseModal :open="!!toDeactivate" title="Dar de baja el producto" @close="toDeactivate = null">
-      <p v-if="toDeactivate">
-        «{{ toDeactivate.name }}» dejará de verse en la tienda. Los pedidos anteriores
+    <BaseModal v-model="confirmOpen" title="Dar de baja el producto" size="sm">
+      <p v-if="productToDeactivate">
+        «{{ productToDeactivate.name }}» dejará de verse en la tienda. Los pedidos anteriores
         conservan su detalle y podés volver a activarlo desde la edición del producto.
       </p>
-      <div class="modal-actions">
-        <button type="button" class="adm-btn" @click="toDeactivate = null">Cancelar</button>
+      <template #footer>
+        <button type="button" class="cancel-btn" :disabled="deactivating" @click="confirmOpen = false">
+          Cancelar
+        </button>
         <BaseButton :disabled="deactivating" @click="confirmDeactivate">
           {{ deactivating ? 'Dando de baja…' : 'Dar de baja' }}
         </BaseButton>
-      </div>
+      </template>
     </BaseModal>
   </section>
 </template>
@@ -303,10 +371,26 @@ async function confirmDeactivate() {
   color: var(--adm-muted);
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
+/* El modal se teleporta al <body>, fuera de .adm: acá se usan los tokens globales,
+   no las variables --adm-* */
+.cancel-btn {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  border-color: var(--color-cyan);
+  color: var(--color-cyan);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
