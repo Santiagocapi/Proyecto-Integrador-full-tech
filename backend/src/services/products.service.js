@@ -19,11 +19,18 @@ export const productsService = {
           compatibility,
           images,
           is_bundle,
+          active,
           created_at,
           categories!inner (
             id,
             name,
             slug
+          ),
+          product_variants (
+            id,
+            name,
+            sku,
+            stock
           )
         `,
         { count: 'exact' },
@@ -52,7 +59,13 @@ export const productsService = {
 
     // compatibility es un array TEXT[] en PostgreSQL
     if (compat) {
-      query = query.contains('compatibility', compat.split(',').map((value) => value.trim()).filter(Boolean))
+      query = query.contains(
+        'compatibility',
+        compat
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      )
     }
 
     // Buscar por nombre o descripción
@@ -119,6 +132,7 @@ export const productsService = {
           specs,
           images,
           is_bundle,
+          active,
           created_at,
           categories (
             id,

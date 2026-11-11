@@ -178,51 +178,14 @@ async function confirmDeactivate() {
                   <span v-if="!p.active" class="adm-tag adm-tag--danger">Dado de baja</span>
                 </div>
               </td>
-              <td data-label="Categoría">{{ p.category?.name ?? '—' }}</td>
+              <td data-label="Categoría">{{ p.categories?.name ?? '—' }}</td>
               <td data-label="Precio">{{ formatPrice(p.price) }}</td>
-              <td data-label="Oferta">
-                <div class="inline">
-                  <input
-                    v-model="offerDraft[p.id]"
-                    class="adm-input adm-input--sm"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    :aria-label="`Precio de oferta de ${p.name}`"
-                    placeholder="Sin oferta"
-                  />
-                  <button
-                    v-if="offerDirty(p)"
-                    type="button"
-                    class="adm-btn"
-                    :disabled="saving[`o${p.id}`]"
-                    @click="saveOffer(p)"
-                  >
-                    Guardar
-                  </button>
-                </div>
-              </td>
+              <td data-label="Oferta">{{ p.offer_price ? formatPrice(p.offer_price) : "-" }}</td>
               <td data-label="Stock">
                 <ul class="variants">
-                  <li v-for="v in p.variants" :key="v.id" class="inline">
-                    <span class="variant-name">{{ v.name }}</span>
-                    <input
-                      v-model="stockDraft[v.id]"
-                      class="adm-input adm-input--sm"
-                      type="number"
-                      min="0"
-                      step="1"
-                      :aria-label="`Stock de ${p.name}, variante ${v.name}`"
-                    />
-                    <button
-                      v-if="stockDirty(v)"
-                      type="button"
-                      class="adm-btn"
-                      :disabled="saving[`v${v.id}`]"
-                      @click="saveStock(v)"
-                    >
-                      Guardar
-                    </button>
+                  <li v-for="v in p.product_variants" :key="v.id" class="inline">
+                    <span class="variant-name">{{ v.name }}:</span>
+                    {{ v.stock }}
                   </li>
                 </ul>
               </td>
@@ -233,7 +196,7 @@ async function confirmDeactivate() {
                     v-if="p.active"
                     type="button"
                     class="adm-btn adm-btn--danger"
-                    @click="toDeactivate = p"
+                    @click="toDeactivate = p.active"
                   >
                     Dar de baja
                   </button>
