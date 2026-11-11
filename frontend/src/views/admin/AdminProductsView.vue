@@ -32,11 +32,14 @@ async function load() {
     const params = new URLSearchParams({ page: String(page.value), limit: '10' })
     if (q.value.trim()) params.set('q', q.value.trim())
     const res = await api.get(`/products?${params}`, { auth: true })
-    items.value = res.items
+    items.value = res.items.map((product) => ({
+      ...product,
+      variants: product.product_variants ?? product.variants ?? [],
+    }))
     total.value = res.total
     page.value = res.page
     pages.value = res.pages
-    for (const p of res.items) {
+    for (const p of items.value) {
       offerDraft[p.id] = p.offer_price ?? ''
       for (const v of p.variants ?? []) stockDraft[v.id] = v.stock
     }
@@ -65,12 +68,13 @@ function goTo(n) {
 }
 
 const stockDirty = (v) => Number(stockDraft[v.id]) !== v.stock
-const offerValue = (p) => (offerDraft[p.id] === '' || offerDraft[p.id] == null ? null : Number(offerDraft[p.id]))
-const offerDirty = (p) => offerValue(p) !== (p.offer_price ?? null)
+const offerValue = (p) =>
+  offerDraft[p.id] === '' || offerDraft[p.id] == null ? null : Number(offerDraft[p.id])
+const offerDirty = (p) => offerValue(p) !== (p.offer_price == null ? null : Number(p.offer_price))
 
 async function saveStock(v) {
   const n = Number(stockDraft[v.id])
-  if (!Number.isInteger(n) || n < 0) {
+  if (stockDraft[v.id] === '' || !Number.isInteger(n) || n < 0 || n > 2147483647) {
     toastError('El stock tiene que ser un número entero, 0 o mayor.')
     return
   }
@@ -88,18 +92,13 @@ async function saveStock(v) {
 
 async function saveOffer(p) {
   const value = offerValue(p)
-  if (value !== null && (Number.isNaN(value) || value < 0 || value >= Number(p.price))) {
-    toastError('El precio de oferta tiene que ser menor al precio normal.')
-    return
-  }
-  const firstVariant = p.variants?.[0]
-  if (!firstVariant) {
-    toastError('Este producto no tiene variantes.')
+  if (value !== null && (!Number.isFinite(value) || value < 0 || value > Number(p.price))) {
+    toastError('El precio de oferta no puede superar el precio normal.')
     return
   }
   saving[`o${p.id}`] = true
   try {
-    await api.patch(`/admin/variants/${firstVariant.id}`, { offer_price: value }, { auth: true })
+    await api.patch(`/admin/products/${p.id}`, { offer_price: value }, { auth: true })
     p.offer_price = value
     success('Precio de oferta actualizado.')
   } catch (e) {
@@ -168,7 +167,13 @@ async function confirmDeactivate() {
           <tbody>
             <tr v-for="p in items" :key="p.id">
               <td data-label="Imagen">
-                <img v-if="p.images?.length" class="thumb" :src="p.images[0]" :alt="p.name" loading="lazy" />
+                <img
+                  v-if="p.images?.length"
+                  class="thumb"
+                  :src="p.images[0]"
+                  :alt="p.name"
+                  loading="lazy"
+                />
                 <span v-else class="thumb thumb--empty">Sin foto</span>
               </td>
               <td data-label="Nombre">
@@ -180,18 +185,57 @@ async function confirmDeactivate() {
               </td>
               <td data-label="Categoría">{{ p.categories?.name ?? '—' }}</td>
               <td data-label="Precio">{{ formatPrice(p.price) }}</td>
-              <td data-label="Oferta">{{ p.offer_price ? formatPrice(p.offer_price) : "-" }}</td>
+              <td data-label="Oferta">
+                <div class="inline">
+                  <input
+                    v-model="offerDraft[p.id]"
+                    class="adm-input adm-input--sm"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    :aria-label="`Precio de oferta de ${p.name}`"
+                    placeholder="Sin oferta"
+                  />
+                  <button
+                    v-if="offerDirty(p)"
+                    type="button"
+                    class="adm-btn"
+                    :disabled="saving[`o${p.id}`]"
+                    @click="saveOffer(p)"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </td>
               <td data-label="Stock">
                 <ul class="variants">
-                  <li v-for="v in p.product_variants" :key="v.id" class="inline">
-                    <span class="variant-name">{{ v.name }}:</span>
-                    {{ v.stock }}
+                  <li v-for="v in p.variants" :key="v.id" class="inline">
+                    <span class="variant-name">{{ v.name }}</span>
+                    <input
+                      v-model="stockDraft[v.id]"
+                      class="adm-input adm-input--sm"
+                      type="number"
+                      min="0"
+                      step="1"
+                      :aria-label="`Stock de ${p.name}, variante ${v.name}`"
+                    />
+                    <button
+                      v-if="stockDirty(v)"
+                      type="button"
+                      class="adm-btn"
+                      :disabled="saving[`v${v.id}`]"
+                      @click="saveStock(v)"
+                    >
+                      Guardar
+                    </button>
                   </li>
                 </ul>
               </td>
               <td data-label="Acciones">
                 <div class="actions">
-                  <RouterLink class="adm-btn" :to="`/admin/productos/${p.id}/${p.slug}`">Editar</RouterLink>
+                  <RouterLink class="adm-btn" :to="`/admin/productos/${p.id}/${p.slug}`"
+                    >Editar</RouterLink
+                  >
                   <button
                     v-if="p.active"
                     type="button"
@@ -220,8 +264,8 @@ async function confirmDeactivate() {
 
     <BaseModal :open="!!toDeactivate" title="Dar de baja el producto" @close="toDeactivate = null">
       <p v-if="toDeactivate">
-        «{{ toDeactivate.name }}» dejará de verse en la tienda. Los pedidos anteriores
-        conservan su detalle y podés volver a activarlo desde la edición del producto.
+        «{{ toDeactivate.name }}» dejará de verse en la tienda. Los pedidos anteriores conservan su
+        detalle y podés volver a activarlo desde la edición del producto.
       </p>
       <div class="modal-actions">
         <button type="button" class="adm-btn" @click="toDeactivate = null">Cancelar</button>

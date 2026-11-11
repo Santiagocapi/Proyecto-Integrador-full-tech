@@ -53,4 +53,5 @@ export const adminProductSchema = z
     }
   })
 export const stockSchema = z.object({ stock: z.number().int().min(0).max(2147483647) }).strict()
+export const offerSchema = z.object({ offer_price: money.nullable() }).strict()
 export const resourceParamsSchema = z.object({ id: idSchema })

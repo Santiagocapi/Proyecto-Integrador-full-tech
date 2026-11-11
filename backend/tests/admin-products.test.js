@@ -8,7 +8,13 @@ vi.mock('../src/config/supabase.js', () => ({
   supabase: { auth: { getUser: vi.fn() }, from: vi.fn() },
 }))
 vi.mock('../src/services/admin-products.service.js', () => ({
-  adminProductsService: { save: vi.fn(), stock: vi.fn(), deactivate: vi.fn(), upload: vi.fn() },
+  adminProductsService: {
+    save: vi.fn(),
+    stock: vi.fn(),
+    offer: vi.fn(),
+    deactivate: vi.fn(),
+    upload: vi.fn(),
+  },
 }))
 const product = {
   category_id: '1',
@@ -30,6 +36,7 @@ const routes = [
   ['put', '/api/admin/products/1'],
   ['delete', '/api/admin/products/1'],
   ['patch', '/api/admin/variants/1'],
+  ['patch', '/api/admin/products/1'],
   ['post', '/api/admin/uploads'],
 ]
 describe('Administración protegida por autenticación real', () => {
@@ -86,6 +93,33 @@ describe('Administración protegida por autenticación real', () => {
       ).status,
     ).toBe(200)
     expect(service.save).toHaveBeenCalledWith('2', expect.objectContaining({ name: product.name }))
+  })
+  it.each([25.5, 0, null])('modifica solo la oferta del producto: %j', async (offer_price) => {
+    service.offer.mockResolvedValue({ id: '2', price: 50, offer_price })
+    const res = await request(app)
+      .patch('/api/admin/products/2')
+      .set('Authorization', 'Bearer admin')
+      .send({ offer_price })
+    expect(res.status).toBe(200)
+    expect(service.offer).toHaveBeenCalledWith('2', { offer_price })
+    expect(service.stock).not.toHaveBeenCalled()
+  })
+  it.each([
+    {},
+    { offer_price: -1 },
+    { offer_price: 1.234 },
+    { offer_price: '20' },
+    { offer_price: 20, stock: 3 },
+  ])('rechaza ofertas mal formadas %j', async (body) => {
+    expect(
+      (
+        await request(app)
+          .patch('/api/admin/products/2')
+          .set('Authorization', 'Bearer admin')
+          .send(body)
+      ).status,
+    ).toBe(400)
+    expect(service.offer).not.toHaveBeenCalled()
   })
   it.each([
     { price: -1 },

@@ -5,6 +5,7 @@ import { validate } from '../middlewares/validate.js'
 import {
   adminProductSchema,
   stockSchema,
+  offerSchema,
   resourceParamsSchema,
 } from '../schemas/admin-product.schema.js'
 import { adminProductsService as service } from '../services/admin-products.service.js'
@@ -26,6 +27,14 @@ router.put(
 router.delete('/products/:id', validate(resourceParamsSchema, 'params'), async (req, res) => {
   res.json(await service.deactivate(req.validatedParams.id))
 })
+router.patch(
+  '/products/:id',
+  validate(resourceParamsSchema, 'params'),
+  validate(offerSchema),
+  async (req, res) => {
+    res.json(await service.offer(req.validatedParams.id, req.body))
+  },
+)
 router.patch(
   '/variants/:id',
   validate(resourceParamsSchema, 'params'),
