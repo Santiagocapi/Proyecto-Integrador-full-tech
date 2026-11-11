@@ -7,6 +7,21 @@ vi.mock('../src/config/supabase.js', () => ({
 }))
 describe('Servicios de administración', () => {
   beforeEach(() => vi.resetAllMocks())
+  it('recupera el detalle de un producto dado de baja por id', async () => {
+    const product = { id: '2', active: false, product_variants: [] }
+    const eq = vi
+      .fn()
+      .mockReturnValue({ maybeSingle: async () => ({ data: product, error: null }) })
+    supabase.from.mockReturnValue({ select: () => ({ eq }) })
+    expect(await service.getById('2')).toEqual(product)
+    expect(eq).toHaveBeenCalledExactlyOnceWith('id', '2')
+  })
+  it('el detalle de administración devuelve 404 cuando falta el producto', async () => {
+    supabase.from.mockReturnValue({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+    })
+    await expect(service.getById('2')).rejects.toMatchObject({ status: 404 })
+  })
   it('usa una sola operación atómica', async () => {
     supabase.rpc.mockResolvedValue({ data: { id: '1' }, error: null })
     const body = { variants: [{ sku: 'NEW' }] }
@@ -45,13 +60,11 @@ describe('Servicios de administración', () => {
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ active: false }))
   })
   it.each([12.5, null])('actualiza la oferta %j sin tocar las variantes', async (offer_price) => {
-    const eq = vi
-      .fn()
-      .mockReturnValue({
-        select: () => ({
-          maybeSingle: async () => ({ data: { id: 2, price: 20, offer_price }, error: null }),
-        }),
-      })
+    const eq = vi.fn().mockReturnValue({
+      select: () => ({
+        maybeSingle: async () => ({ data: { id: 2, price: 20, offer_price }, error: null }),
+      }),
+    })
     const update = vi.fn().mockReturnValue({ eq })
     supabase.from.mockReturnValue({ update })
     expect(await service.offer('2', { offer_price })).toEqual({ id: '2', price: 20, offer_price })

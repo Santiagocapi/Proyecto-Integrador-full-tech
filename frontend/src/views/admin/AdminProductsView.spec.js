@@ -35,6 +35,12 @@ async function setup() {
   return wrapper
 }
 describe('Edición en línea de stock y oferta', () => {
+  it('consulta el listado protegido y muestra también los productos dados de baja', async () => {
+    const wrapper = await setup()
+    expect(api.get).toHaveBeenCalledWith('/admin/products?page=1&limit=10', { auth: true })
+    expect(wrapper.text()).toContain('Dado de baja')
+    wrapper.unmount()
+  })
   it('no marca la oferta como modificada por recibir un decimal como texto', async () => {
     const wrapper = await setup()
     expect(wrapper.findAll('button').filter((b) => b.text() === 'Guardar')).toHaveLength(0)

@@ -17,6 +17,16 @@ function fail(error) {
 }
 
 export const adminProductsService = {
+  async getById(id) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(id, name, slug), product_variants(id, name, sku, stock)')
+      .eq('id', id)
+      .maybeSingle()
+    fail(error)
+    if (!data) throw Object.assign(new Error('Producto no encontrado'), { status: 404 })
+    return data
+  },
   async save(id, payload) {
     if (!id && payload.variants.some((variant) => variant.id)) {
       throw Object.assign(new Error('Las variantes nuevas no deben tener id'), { status: 400 })

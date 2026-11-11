@@ -1,14 +1,15 @@
 import { supabase } from '../config/supabase.js'
 
 export const productsService = {
-  async list({ page = 1, limit = 10, category, minPrice, maxPrice, connection, compat, q, sort }) {
+  async list(
+    { page = 1, limit = 10, category, minPrice, maxPrice, connection, compat, q, sort },
+    { includeInactive = false } = {},
+  ) {
     const from = (page - 1) * limit
     const to = from + limit - 1
 
-    let query = supabase
-      .from('products')
-      .select(
-        `
+    let query = supabase.from('products').select(
+      `
           id,
           name,
           slug,
@@ -33,9 +34,11 @@ export const productsService = {
             stock
           )
         `,
-        { count: 'exact' },
-      )
-      .eq('active', true)
+      { count: 'exact' },
+    )
+
+    // Solo el router protegido de administración pasa esta opción interna.
+    if (!includeInactive) query = query.eq('active', true)
 
     // Filtrar por categoría
     if (category) {
