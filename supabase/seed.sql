@@ -1,8 +1,10 @@
 -- FULL-TECH | Datos iniciales de demostración
--- Ejecutar DESPUÉS de aplicar las migraciones 001-006.
--- Idempotente: las categorías/productos/variantes se actualizan por slug/SKU.
--- Los precios y stocks son datos ficticios para desarrollo; validar antes de producción.
--- Las imágenes quedan vacías hasta cargar URLs reales en Supabase Storage.
+-- Ejecutar después de aplicar las migraciones necesarias.
+-- Idempotente: categorías, productos y variantes se actualizan por slug/SKU.
+-- Los componentes de los Starter Packs se sincronizan con la configuración del archivo.
+-- Los precios y stocks son datos de demostración.
+-- IMPORTANTE: volver a ejecutar este archivo puede restablecer precios y stocks.
+-- Las imágenes de productos utilizan URLs públicas de Supabase Storage.
 
 BEGIN;
 
