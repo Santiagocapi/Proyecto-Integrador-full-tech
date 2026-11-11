@@ -70,4 +70,38 @@ describe('Formulario de productos con el contrato real de la API', () => {
     expect(payload.price).toBe(100)
     wrapper.unmount()
   })
+  it('permite abrir y reactivar un producto dado de baja mediante el detalle de admin', async () => {
+    route.params = { id: '3' }
+    api.get.mockImplementation(async (path) =>
+      path === '/categories'
+        ? [{ id: 1, name: 'Audio' }]
+        : {
+            id: '3',
+            name: 'Micrófono',
+            slug: 'microfono',
+            description: 'Micrófono USB',
+            price: 100,
+            active: false,
+            categories: { id: 1 },
+            product_variants: [{ id: '7', name: 'Único', sku: 'MIC-7', stock: 2 }],
+          },
+    )
+    const wrapper = mount(AdminProductFormView)
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledWith('/admin/products/3', { auth: true })
+    const visibility = wrapper
+      .findAll('label')
+      .find((label) => label.text().includes('Visible en la tienda'))
+      .get('input')
+    expect(visibility.element.checked).toBe(false)
+    await visibility.setValue(true)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(api.put).toHaveBeenCalledWith(
+      '/admin/products/3',
+      expect.objectContaining({ active: true }),
+      { auth: true },
+    )
+    wrapper.unmount()
+  })
 })

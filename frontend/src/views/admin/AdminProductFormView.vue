@@ -11,8 +11,7 @@ const { success, error: toastError } = useToast()
 
 // La misma vista sirve para /admin/productos/nuevo y /admin/productos/:id
 const productId = computed(() => route.params.id)
-const productSlug = computed(() => route.params.slug)
-const isEdit = computed(() => !!productSlug.value)
+const isEdit = computed(() => !!productId.value)
 
 const CONNECTION_SUGGESTIONS = ['USB', 'XLR', 'Lightning', 'USB-C', 'Inalámbrico']
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -95,7 +94,7 @@ async function load() {
     categories.value = Array.isArray(catRes) ? catRes : (catRes.items ?? [])
 
     if (isEdit.value) {
-      const product = await api.get(`/products/${productSlug.value}`, { auth: true })
+      const product = await api.get(`/admin/products/${productId.value}`, { auth: true })
       fillForm(product)
       slugTouched.value = true
     } else {
@@ -170,12 +169,14 @@ function validate() {
   if (!form.description.trim()) e.description = 'Escribí una descripción.'
 
   const price = Number(form.price)
-  if (form.price === '' || Number.isNaN(price) || price <= 0) e.price = 'Ingresá un precio mayor a 0.'
+  if (form.price === '' || Number.isNaN(price) || price <= 0)
+    e.price = 'Ingresá un precio mayor a 0.'
 
   if (form.offer_price !== '' && form.offer_price !== null) {
     const offer = Number(form.offer_price)
     if (Number.isNaN(offer) || offer < 0) e.offer_price = 'Ingresá un precio de oferta válido.'
-    else if (!e.price && offer >= price) e.offer_price = 'La oferta tiene que ser menor al precio normal.'
+    else if (!e.price && offer >= price)
+      e.offer_price = 'La oferta tiene que ser menor al precio normal.'
   }
 
   const seenSkus = new Set()
@@ -186,7 +187,8 @@ function validate() {
     else if (seenSkus.has(v.sku.trim())) ve.sku = 'El SKU está repetido.'
     else seenSkus.add(v.sku.trim())
     const stock = Number(v.stock)
-    if (v.stock === '' || !Number.isInteger(stock) || stock < 0) ve.stock = 'Stock entero, 0 o mayor.'
+    if (v.stock === '' || !Number.isInteger(stock) || stock < 0)
+      ve.stock = 'Stock entero, 0 o mayor.'
     return ve
   })
   if (variantErrors.some((ve) => Object.keys(ve).length)) e.variants = variantErrors
@@ -205,14 +207,17 @@ function buildPayload() {
     category_id: String(form.category_id),
     description: form.description.trim(),
     price: Number(form.price),
-    offer_price: form.offer_price === '' || form.offer_price === null ? null : Number(form.offer_price),
+    offer_price:
+      form.offer_price === '' || form.offer_price === null ? null : Number(form.offer_price),
     connection_type: form.connection_type.trim() || null,
     compatibility: form.compatibility
       .split(',')
       .map((c) => c.trim())
       .filter(Boolean),
     specs: Object.fromEntries(
-      form.specs.filter((s) => s.key.trim() && s.value.trim()).map((s) => [s.key.trim(), s.value.trim()]),
+      form.specs
+        .filter((s) => s.key.trim() && s.value.trim())
+        .map((s) => [s.key.trim(), s.value.trim()]),
     ),
     images: form.images,
     is_bundle: form.is_bundle,
@@ -302,7 +307,12 @@ async function submit() {
 
         <label class="adm-label">
           Tipo de conexión
-          <input v-model="form.connection_type" class="adm-input" type="text" list="connection-types" />
+          <input
+            v-model="form.connection_type"
+            class="adm-input"
+            type="text"
+            list="connection-types"
+          />
           <datalist id="connection-types">
             <option v-for="c in CONNECTION_SUGGESTIONS" :key="c" :value="c" />
           </datalist>
@@ -310,7 +320,12 @@ async function submit() {
 
         <label class="adm-label">
           Compatibilidad (separada por comas)
-          <input v-model="form.compatibility" class="adm-input" type="text" placeholder="PC, iPhone, Android" />
+          <input
+            v-model="form.compatibility"
+            class="adm-input"
+            type="text"
+            placeholder="PC, iPhone, Android"
+          />
         </label>
 
         <label class="adm-label full">
@@ -367,7 +382,9 @@ async function submit() {
 
       <fieldset class="adm-card">
         <legend class="legend">Variantes y stock</legend>
-        <p class="hint">Si el producto no tiene versiones, dejá una sola variante llamada «Único».</p>
+        <p class="hint">
+          Si el producto no tiene versiones, dejá una sola variante llamada «Único».
+        </p>
 
         <ul class="rows">
           <li v-for="(v, i) in form.variants" :key="v.id ?? `new-${i}`" class="row">
@@ -379,7 +396,9 @@ async function submit() {
                 type="text"
                 :aria-invalid="!!errors.variants?.[i]?.name"
               />
-              <p v-if="errors.variants?.[i]?.name" class="adm-error">{{ errors.variants[i].name }}</p>
+              <p v-if="errors.variants?.[i]?.name" class="adm-error">
+                {{ errors.variants[i].name }}
+              </p>
             </label>
             <label class="adm-label">
               SKU
@@ -401,7 +420,9 @@ async function submit() {
                 step="1"
                 :aria-invalid="!!errors.variants?.[i]?.stock"
               />
-              <p v-if="errors.variants?.[i]?.stock" class="adm-error">{{ errors.variants[i].stock }}</p>
+              <p v-if="errors.variants?.[i]?.stock" class="adm-error">
+                {{ errors.variants[i].stock }}
+              </p>
             </label>
             <button
               type="button"
@@ -431,7 +452,11 @@ async function submit() {
               Valor
               <input v-model="s.value" class="adm-input" type="text" placeholder="18 W" />
             </label>
-            <button type="button" class="adm-btn adm-btn--danger row__remove" @click="removeSpec(i)">
+            <button
+              type="button"
+              class="adm-btn adm-btn--danger row__remove"
+              @click="removeSpec(i)"
+            >
               Quitar dato
             </button>
           </li>
@@ -447,7 +472,9 @@ async function submit() {
         <ul v-if="form.images.length" class="previews">
           <li v-for="(url, i) in form.images" :key="url" class="preview">
             <img :src="url" :alt="`Imagen ${i + 1} del producto`" />
-            <button type="button" class="adm-btn adm-btn--danger" @click="removeImage(i)">Quitar</button>
+            <button type="button" class="adm-btn adm-btn--danger" @click="removeImage(i)">
+              Quitar
+            </button>
           </li>
         </ul>
 

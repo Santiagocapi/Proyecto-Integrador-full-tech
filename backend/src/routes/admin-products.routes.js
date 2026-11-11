@@ -9,9 +9,18 @@ import {
   resourceParamsSchema,
 } from '../schemas/admin-product.schema.js'
 import { adminProductsService as service } from '../services/admin-products.service.js'
+import { productsService } from '../services/products.service.js'
+import { productQuerySchema } from '../schemas/product.schema.js'
 
 const router = Router()
 router.use(requireAuth, requireRole('admin'))
+
+router.get('/products', validate(productQuerySchema, 'query'), async (req, res) => {
+  res.json(await productsService.list(req.validatedQuery, { includeInactive: true }))
+})
+router.get('/products/:id', validate(resourceParamsSchema, 'params'), async (req, res) => {
+  res.json(await service.getById(req.validatedParams.id))
+})
 
 router.post('/products', validate(adminProductSchema), async (req, res) => {
   res.status(201).json(await service.save(null, req.body))
