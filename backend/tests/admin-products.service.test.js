@@ -34,19 +34,39 @@ describe('Servicios de administración', () => {
     await expect(service.save('1', {})).rejects.toMatchObject({ status })
   })
   it('baja con UPDATE sin borrar variantes', async () => {
-    const update = vi
-      .fn()
-      .mockReturnValue({
-        eq: vi
-          .fn()
-          .mockReturnValue({
-            select: () => ({ maybeSingle: async () => ({ data: { id: '1', active: false } }) }),
-          }),
-      })
+    const update = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: () => ({ maybeSingle: async () => ({ data: { id: '1', active: false } }) }),
+      }),
+    })
     supabase.from.mockReturnValue({ update })
     await service.deactivate('1')
     expect(supabase.from).toHaveBeenCalledExactlyOnceWith('products')
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ active: false }))
+  })
+  it.each([12.5, null])('actualiza la oferta %j sin tocar las variantes', async (offer_price) => {
+    const eq = vi
+      .fn()
+      .mockReturnValue({
+        select: () => ({
+          maybeSingle: async () => ({ data: { id: 2, price: 20, offer_price }, error: null }),
+        }),
+      })
+    const update = vi.fn().mockReturnValue({ eq })
+    supabase.from.mockReturnValue({ update })
+    expect(await service.offer('2', { offer_price })).toEqual({ id: '2', price: 20, offer_price })
+    expect(supabase.from).toHaveBeenCalledExactlyOnceWith('products')
+    expect(update).toHaveBeenCalledExactlyOnceWith({ offer_price })
+    expect(eq).toHaveBeenCalledWith('id', '2')
+  })
+  it.each([
+    [{ data: null, error: null }, 404],
+    [{ data: null, error: { code: '23514' } }, 400],
+  ])('propaga producto inexistente o precio rechazado por PostgreSQL', async (response, status) => {
+    supabase.from.mockReturnValue({
+      update: () => ({ eq: () => ({ select: () => ({ maybeSingle: async () => response }) }) }),
+    })
+    await expect(service.offer('2', { offer_price: 99 })).rejects.toMatchObject({ status })
   })
   it.each([
     ['image/png', Buffer.from('<script>bad</script>')],

@@ -79,23 +79,18 @@ function goTo(n) {
 const stockDirty = (v) => Number(stockDraft[v.id]) !== v.stock
 const offerValue = (p) =>
   offerDraft[p.id] === '' || offerDraft[p.id] == null ? null : Number(offerDraft[p.id])
-const offerDirty = (p) => offerValue(p) !== (p.offer_price ?? null)
+const offerDirty = (p) => offerValue(p) !== (p.offer_price == null ? null : Number(p.offer_price))
 
-// Siempre se mandan los dos campos del endpoint (stock y offer_price).
-// El que no se está editando lleva el valor ya guardado.
-async function saveStock(p, v) {
+// Cada actualización envía solo el campo editado a la entidad que lo guarda.
+async function saveStock(v) {
   const n = Number(stockDraft[v.id])
-  if (!Number.isInteger(n) || n < 0) {
+  if (stockDraft[v.id] === '' || !Number.isInteger(n) || n < 0 || n > 2147483647) {
     toastError('El stock tiene que ser un número entero, 0 o mayor.')
     return
   }
   saving[`v${v.id}`] = true
   try {
-    await api.patch(
-      `/admin/variants/${v.id}`,
-      { stock: n, offer_price: p.offer_price ?? null },
-      { auth: true },
-    )
+    await api.patch(`/admin/variants/${v.id}`, { stock: n }, { auth: true })
     v.stock = n
     success('Stock actualizado.')
   } catch (e) {
@@ -107,23 +102,13 @@ async function saveStock(p, v) {
 
 async function saveOffer(p) {
   const value = offerValue(p)
-  if (value !== null && (Number.isNaN(value) || value < 0 || value >= Number(p.price))) {
-    toastError('El precio de oferta tiene que ser menor al precio normal.')
-    return
-  }
-  // La oferta es del producto, pero el endpoint recibe una variante: se usa la primera
-  const firstVariant = p.product_variants?.[0]
-  if (!firstVariant) {
-    toastError('Este producto no tiene variantes.')
+  if (value !== null && (!Number.isFinite(value) || value < 0 || value > Number(p.price))) {
+    toastError('El precio de oferta no puede superar el precio normal.')
     return
   }
   saving[`o${p.id}`] = true
   try {
-    await api.patch(
-      `/admin/variants/${firstVariant.id}`,
-      { stock: firstVariant.stock, offer_price: value },
-      { auth: true },
-    )
+    await api.patch(`/admin/products/${p.id}`, { offer_price: value }, { auth: true })
     p.offer_price = value
     success('Precio de oferta actualizado.')
   } catch (e) {
@@ -248,7 +233,7 @@ async function confirmDeactivate() {
                       type="button"
                       class="adm-btn"
                       :disabled="saving[`v${v.id}`]"
-                      @click="saveStock(p, v)"
+                      @click="saveStock(v)"
                     >
                       Guardar
                     </button>

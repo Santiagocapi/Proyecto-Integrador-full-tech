@@ -50,6 +50,21 @@ export const adminProductsService = {
     if (!data) throw Object.assign(new Error('Variante no encontrada'), { status: 404 })
     return data
   },
+  async offer(id, payload) {
+    // El CHECK de products valida oferta <= precio con los valores actuales de la fila.
+    const { data, error } = await supabase
+      .from('products')
+      .update(payload)
+      .eq('id', id)
+      .select('id, price, offer_price')
+      .maybeSingle()
+    if (error?.code === '23514') {
+      throw Object.assign(new Error('La oferta no puede superar el precio normal'), { status: 400 })
+    }
+    fail(error)
+    if (!data) throw Object.assign(new Error('Producto no encontrado'), { status: 404 })
+    return { ...data, id: String(data.id) }
+  },
   async upload(file) {
     const bytes = file.buffer
     let type
