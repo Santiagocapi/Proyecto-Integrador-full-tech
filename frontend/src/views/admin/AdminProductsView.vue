@@ -22,8 +22,20 @@ const stockDraft = reactive({})
 const offerDraft = reactive({})
 const saving = reactive({})
 
-const toDeactivate = ref(null)
+// Baja de producto: el modal se abre con v-model (confirmOpen) y el producto se guarda aparte
+const confirmOpen = ref(false)
+const productToDeactivate = ref(null)
 const deactivating = ref(false)
+
+function errorText(e, fallback) {
+  const detail = Array.isArray(e?.details)
+    ? e.details
+        .map((d) => (typeof d === 'string' ? d : d?.message))
+        .filter(Boolean)
+        .join(' · ')
+    : ''
+  return [e?.message || fallback, detail].filter(Boolean).join(' — ')
+}
 
 async function load() {
   loading.value = true
@@ -32,16 +44,13 @@ async function load() {
     const params = new URLSearchParams({ page: String(page.value), limit: '10' })
     if (q.value.trim()) params.set('q', q.value.trim())
     const res = await api.get(`/products?${params}`, { auth: true })
-    items.value = res.items.map((product) => ({
-      ...product,
-      variants: product.product_variants ?? product.variants ?? [],
-    }))
+    items.value = res.items
     total.value = res.total
     page.value = res.page
     pages.value = res.pages
-    for (const p of items.value) {
+    for (const p of res.items) {
       offerDraft[p.id] = p.offer_price ?? ''
-      for (const v of p.variants ?? []) stockDraft[v.id] = v.stock
+      for (const v of p.product_variants ?? []) stockDraft[v.id] = v.stock
     }
   } catch (e) {
     loadError.value = e.message || 'No se pudieron cargar los productos.'
@@ -72,6 +81,7 @@ const offerValue = (p) =>
   offerDraft[p.id] === '' || offerDraft[p.id] == null ? null : Number(offerDraft[p.id])
 const offerDirty = (p) => offerValue(p) !== (p.offer_price == null ? null : Number(p.offer_price))
 
+// Cada actualización envía solo el campo editado a la entidad que lo guarda.
 async function saveStock(v) {
   const n = Number(stockDraft[v.id])
   if (stockDraft[v.id] === '' || !Number.isInteger(n) || n < 0 || n > 2147483647) {
@@ -84,7 +94,7 @@ async function saveStock(v) {
     v.stock = n
     success('Stock actualizado.')
   } catch (e) {
-    toastError(e.message || 'No se pudo actualizar el stock.')
+    toastError(errorText(e, 'No se pudo actualizar el stock.'))
   } finally {
     saving[`v${v.id}`] = false
   }
@@ -102,23 +112,28 @@ async function saveOffer(p) {
     p.offer_price = value
     success('Precio de oferta actualizado.')
   } catch (e) {
-    toastError(e.message || 'No se pudo actualizar el precio de oferta.')
+    toastError(errorText(e, 'No se pudo actualizar el precio de oferta.'))
   } finally {
     saving[`o${p.id}`] = false
   }
 }
 
+function askDeactivate(product) {
+  productToDeactivate.value = product
+  confirmOpen.value = true
+}
+
 async function confirmDeactivate() {
-  const product = toDeactivate.value
+  const product = productToDeactivate.value
   if (!product) return
   deactivating.value = true
   try {
     await api.delete(`/admin/products/${product.id}`, { auth: true })
     success('Producto dado de baja.')
-    toDeactivate.value = null
+    confirmOpen.value = false
     await load()
   } catch (e) {
-    toastError(e.message || 'No se pudo dar de baja el producto.')
+    toastError(errorText(e, 'No se pudo dar de baja el producto.'))
   } finally {
     deactivating.value = false
   }
@@ -167,13 +182,7 @@ async function confirmDeactivate() {
           <tbody>
             <tr v-for="p in items" :key="p.id">
               <td data-label="Imagen">
-                <img
-                  v-if="p.images?.length"
-                  class="thumb"
-                  :src="p.images[0]"
-                  :alt="p.name"
-                  loading="lazy"
-                />
+                <img v-if="p.images?.length" class="thumb" :src="p.images[0]" :alt="p.name" loading="lazy" />
                 <span v-else class="thumb thumb--empty">Sin foto</span>
               </td>
               <td data-label="Nombre">
@@ -209,7 +218,7 @@ async function confirmDeactivate() {
               </td>
               <td data-label="Stock">
                 <ul class="variants">
-                  <li v-for="v in p.variants" :key="v.id" class="inline">
+                  <li v-for="v in p.product_variants" :key="v.id" class="inline">
                     <span class="variant-name">{{ v.name }}</span>
                     <input
                       v-model="stockDraft[v.id]"
@@ -233,14 +242,12 @@ async function confirmDeactivate() {
               </td>
               <td data-label="Acciones">
                 <div class="actions">
-                  <RouterLink class="adm-btn" :to="`/admin/productos/${p.id}/${p.slug}`"
-                    >Editar</RouterLink
-                  >
+                  <RouterLink class="adm-btn" :to="`/admin/productos/${p.id}/${p.slug}`">Editar</RouterLink>
                   <button
                     v-if="p.active"
                     type="button"
                     class="adm-btn adm-btn--danger"
-                    @click="toDeactivate = p.active"
+                    @click="askDeactivate(p)"
                   >
                     Dar de baja
                   </button>
@@ -262,17 +269,19 @@ async function confirmDeactivate() {
       </nav>
     </template>
 
-    <BaseModal :open="!!toDeactivate" title="Dar de baja el producto" @close="toDeactivate = null">
-      <p v-if="toDeactivate">
-        «{{ toDeactivate.name }}» dejará de verse en la tienda. Los pedidos anteriores conservan su
-        detalle y podés volver a activarlo desde la edición del producto.
+    <BaseModal v-model="confirmOpen" title="Dar de baja el producto" size="sm">
+      <p v-if="productToDeactivate">
+        «{{ productToDeactivate.name }}» dejará de verse en la tienda. Los pedidos anteriores
+        conservan su detalle y podés volver a activarlo desde la edición del producto.
       </p>
-      <div class="modal-actions">
-        <button type="button" class="adm-btn" @click="toDeactivate = null">Cancelar</button>
+      <template #footer>
+        <button type="button" class="cancel-btn" :disabled="deactivating" @click="confirmOpen = false">
+          Cancelar
+        </button>
         <BaseButton :disabled="deactivating" @click="confirmDeactivate">
           {{ deactivating ? 'Dando de baja…' : 'Dar de baja' }}
         </BaseButton>
-      </div>
+      </template>
     </BaseModal>
   </section>
 </template>
@@ -347,10 +356,26 @@ async function confirmDeactivate() {
   color: var(--adm-muted);
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
+/* El modal se teleporta al <body>, fuera de .adm: acá se usan los tokens globales,
+   no las variables --adm-* */
+.cancel-btn {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  border-color: var(--color-cyan);
+  color: var(--color-cyan);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
