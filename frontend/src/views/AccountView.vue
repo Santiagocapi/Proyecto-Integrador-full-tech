@@ -108,11 +108,11 @@
 
     <span class="order-tracking">
       Nº Seguimiento:
-      <strong>{{ order.tracking_number || order.id }}</strong>
+      <strong>{{ order.tracking_code || order.id }}</strong>
     </span>
 
     <span class="order-total">
-      Total: ${{ order.total }}
+      Total: {{ formatPrice(order.total) }}
     </span>
   </div>
 
@@ -134,10 +134,17 @@
     class="order-details"
   >
     <h3>Detalle del pedido</h3>
-    <p>Pedido Nº {{ order.tracking_number || order.id }}</p>
+    <p>Pedido Nº {{ order.tracking_code || order.id }}</p>
     <p>Fecha: {{ formatDate(order.created_at) }}</p>
     <p>Estado: {{ order.status }}</p>
-    <p>Total: ${{ order.total }}</p>
+    <p>Total: {{ formatPrice(order.total) }}</p>
+
+    <ul v-if="order.items?.length" class="order-items">
+      <li v-for="item in order.items" :key="item.variant_id">
+        <span>{{ item.product_name }} · {{ item.variant_name }} × {{ item.quantity }}</span>
+        <strong>{{ formatPrice(item.unit_price * item.quantity) }}</strong>
+      </li>
+    </ul>
   </div>
 </div>
         </div>
@@ -151,6 +158,7 @@ import { ref, reactive, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/api'
 import { useFormValidation } from '@/composables/useFormValidation'
+import { formatPrice } from '@/utils/format'
 
 // Store de autenticación de Pinia
 const auth = useAuthStore()
@@ -502,6 +510,20 @@ input:focus {
   padding: 1rem;
   border-top: 1px solid #333;
   color: #bbb;
+}
+
+.order-items {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.order-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .order-details h3 {
