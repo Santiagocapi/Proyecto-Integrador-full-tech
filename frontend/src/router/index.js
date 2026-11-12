@@ -54,7 +54,7 @@ const routes = [
   {
     path: '/admin',
     component: () => import('@/components/layout/AdminLayout.vue'),
-    meta: { requiresAdmin: true },
+    meta: { requiresAdmin: false },
     children: [
       {
         path: '',
@@ -75,7 +75,7 @@ const routes = [
         meta: { title: 'Nuevo producto' },
       },
       {
-        path: 'productos/:id',
+        path: 'productos/:id/:slug',
         name: 'admin-product-edit',
         component: () => import('@/views/admin/AdminProductFormView.vue'),
         meta: { title: 'Editar producto' },

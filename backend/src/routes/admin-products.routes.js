@@ -5,12 +5,23 @@ import { validate } from '../middlewares/validate.js'
 import {
   adminProductSchema,
   stockSchema,
+  offerSchema,
   resourceParamsSchema,
 } from '../schemas/admin-product.schema.js'
 import { adminProductsService as service } from '../services/admin-products.service.js'
+import { productsService } from '../services/products.service.js'
+import { productQuerySchema } from '../schemas/product.schema.js'
 
 const router = Router()
 router.use(requireAuth, requireRole('admin'))
+
+router.get('/products', validate(productQuerySchema, 'query'), async (req, res) => {
+  res.json(await productsService.list(req.validatedQuery, { includeInactive: true }))
+})
+router.get('/products/:id', validate(resourceParamsSchema, 'params'), async (req, res) => {
+  res.json(await service.getById(req.validatedParams.id))
+})
+
 router.post('/products', validate(adminProductSchema), async (req, res) => {
   res.status(201).json(await service.save(null, req.body))
 })
@@ -25,6 +36,14 @@ router.put(
 router.delete('/products/:id', validate(resourceParamsSchema, 'params'), async (req, res) => {
   res.json(await service.deactivate(req.validatedParams.id))
 })
+router.patch(
+  '/products/:id',
+  validate(resourceParamsSchema, 'params'),
+  validate(offerSchema),
+  async (req, res) => {
+    res.json(await service.offer(req.validatedParams.id, req.body))
+  },
+)
 router.patch(
   '/variants/:id',
   validate(resourceParamsSchema, 'params'),
@@ -42,14 +61,12 @@ router.post(
   (req, res, next) => {
     upload(req, res, (error) => {
       if (error)
-        return res
-          .status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400)
-          .json({
-            error:
-              error.code === 'LIMIT_FILE_SIZE'
-                ? 'La imagen supera 2 MB'
-                : 'Archivo de imagen inválido',
-          })
+        return res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({
+          error:
+            error.code === 'LIMIT_FILE_SIZE'
+              ? 'La imagen supera 2 MB'
+              : 'Archivo de imagen inválido',
+        })
       next()
     })
   },
