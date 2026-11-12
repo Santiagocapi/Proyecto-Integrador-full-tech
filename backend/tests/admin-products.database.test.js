@@ -51,6 +51,26 @@ describe('Migración 008 en PostgreSQL local aislado', () => {
       await db.exec('RESET ROLE')
     }
   })
+  it('actualiza y quita oferta con el CHECK real, conservando el stock de las variantes', async () => {
+    const product = await save(null, payload('oferta-parcial', 'OFERTA-PARCIAL'))
+    const update = (offer) =>
+      db.query('UPDATE products SET offer_price=$1 WHERE id=$2 RETURNING offer_price', [
+        offer,
+        product.id,
+      ])
+    expect((await update(5.5)).rows[0].offer_price).toBe('5.50')
+    await expect(update(11)).rejects.toMatchObject({ code: '23514' })
+    expect(
+      (await db.query('SELECT offer_price FROM products WHERE id=$1', [product.id])).rows[0]
+        .offer_price,
+    ).toBe('5.50')
+    expect((await update(0)).rows[0].offer_price).toBe('0.00')
+    expect((await update(null)).rows[0].offer_price).toBeNull()
+    expect(
+      (await db.query('SELECT stock FROM product_variants WHERE product_id=$1', [product.id]))
+        .rows[0].stock,
+    ).toBe(2)
+  })
   it('revierte toda el alta ante SKU duplicado', async () => {
     await expect(save(null, payload('duplicado', 'MIC'))).rejects.toMatchObject({ code: '23505' })
     expect((await db.query("SELECT * FROM products WHERE slug='duplicado'")).rows).toHaveLength(0)

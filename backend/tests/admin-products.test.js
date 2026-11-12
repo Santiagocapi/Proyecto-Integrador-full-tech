@@ -3,12 +3,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { app } from '../src/app.js'
 import { supabase } from '../src/config/supabase.js'
 import { adminProductsService as service } from '../src/services/admin-products.service.js'
+import { productsService } from '../src/services/products.service.js'
+vi.mock('../src/services/products.service.js', () => ({
+  productsService: { list: vi.fn(), getBySlug: vi.fn() },
+}))
 
 vi.mock('../src/config/supabase.js', () => ({
   supabase: { auth: { getUser: vi.fn() }, from: vi.fn() },
 }))
 vi.mock('../src/services/admin-products.service.js', () => ({
-  adminProductsService: { save: vi.fn(), stock: vi.fn(), deactivate: vi.fn(), upload: vi.fn() },
+  adminProductsService: {
+    save: vi.fn(),
+    stock: vi.fn(),
+    offer: vi.fn(),
+    getById: vi.fn(),
+    deactivate: vi.fn(),
+    upload: vi.fn(),
+  },
 }))
 const product = {
   category_id: '1',
@@ -26,16 +37,54 @@ function auth(role = 'admin') {
   })
 }
 const routes = [
+  ['get', '/api/admin/products'],
+  ['get', '/api/admin/products/1'],
   ['post', '/api/admin/products'],
   ['put', '/api/admin/products/1'],
   ['delete', '/api/admin/products/1'],
   ['patch', '/api/admin/variants/1'],
+  ['patch', '/api/admin/products/1'],
   ['post', '/api/admin/uploads'],
 ]
 describe('Administración protegida por autenticación real', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     auth()
+  })
+  it('lista activos e inactivos con filtros validados solo para admin', async () => {
+    const result = { items: [{ id: '2', active: false }], total: 1, page: 2, pages: 2 }
+    productsService.list.mockResolvedValue(result)
+    const res = await request(app)
+      .get('/api/admin/products?page=2&limit=10&q=micro')
+      .set('Authorization', 'Bearer admin')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual(result)
+    expect(productsService.list).toHaveBeenCalledWith(
+      { page: 2, limit: 10, q: 'micro' },
+      { includeInactive: true },
+    )
+  })
+  it('rechaza paginación inválida antes de consultar el catálogo de admin', async () => {
+    expect(
+      (await request(app).get('/api/admin/products?page=0').set('Authorization', 'Bearer admin'))
+        .status,
+    ).toBe(400)
+    expect(productsService.list).not.toHaveBeenCalled()
+  })
+  it('abre el detalle inactivo por id sin usar el catálogo público', async () => {
+    service.getById.mockResolvedValue({ id: '2', active: false, product_variants: [] })
+    const res = await request(app).get('/api/admin/products/2').set('Authorization', 'Bearer admin')
+    expect(res.status).toBe(200)
+    expect(res.body.active).toBe(false)
+    expect(service.getById).toHaveBeenCalledWith('2')
+  })
+  it('devuelve 404 si no existe el producto de administración', async () => {
+    service.getById.mockRejectedValue(
+      Object.assign(new Error('Producto no encontrado'), { status: 404 }),
+    )
+    expect(
+      (await request(app).get('/api/admin/products/2').set('Authorization', 'Bearer admin')).status,
+    ).toBe(404)
   })
   it.each(routes)('rechaza sin token: %s %s', async (method, path) => {
     expect((await request(app)[method](path)).status).toBe(401)
@@ -86,6 +135,33 @@ describe('Administración protegida por autenticación real', () => {
       ).status,
     ).toBe(200)
     expect(service.save).toHaveBeenCalledWith('2', expect.objectContaining({ name: product.name }))
+  })
+  it.each([25.5, 0, null])('modifica solo la oferta del producto: %j', async (offer_price) => {
+    service.offer.mockResolvedValue({ id: '2', price: 50, offer_price })
+    const res = await request(app)
+      .patch('/api/admin/products/2')
+      .set('Authorization', 'Bearer admin')
+      .send({ offer_price })
+    expect(res.status).toBe(200)
+    expect(service.offer).toHaveBeenCalledWith('2', { offer_price })
+    expect(service.stock).not.toHaveBeenCalled()
+  })
+  it.each([
+    {},
+    { offer_price: -1 },
+    { offer_price: 1.234 },
+    { offer_price: '20' },
+    { offer_price: 20, stock: 3 },
+  ])('rechaza ofertas mal formadas %j', async (body) => {
+    expect(
+      (
+        await request(app)
+          .patch('/api/admin/products/2')
+          .set('Authorization', 'Bearer admin')
+          .send(body)
+      ).status,
+    ).toBe(400)
+    expect(service.offer).not.toHaveBeenCalled()
   })
   it.each([
     { price: -1 },

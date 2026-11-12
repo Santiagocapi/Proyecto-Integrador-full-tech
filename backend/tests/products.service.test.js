@@ -30,6 +30,23 @@ describe('Servicio de productos con transporte simulado', () => {
   beforeEach(() => {
     fetchMock.mockReset()
   })
+  it('el listado de administración incluye inactivos sin perder paginación ni búsqueda', async () => {
+    respond([{ id: 2, active: false }], { count: 11 })
+    const result = await productsService.list(
+      { page: 2, limit: 10, q: 'micro' },
+      { includeInactive: true },
+    )
+    expect(requestedUrl().searchParams.has('active')).toBe(false)
+    expect(requestedUrl().searchParams.get('offset')).toBe('10')
+    expect(requestedUrl().searchParams.get('or')).toContain('micro')
+    expect(result.items[0].active).toBe(false)
+    expect(result.total).toBe(11)
+  })
+  it('un parámetro público no puede activar el modo de administración', async () => {
+    respond([])
+    await productsService.list({ includeInactive: true })
+    expect(requestedUrl().searchParams.get('active')).toBe('eq.true')
+  })
 
   it('envía filtros, paginación y orden al cliente de Supabase', async () => {
     respond([{ id: 1 }], { count: 21 })
