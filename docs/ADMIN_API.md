@@ -12,10 +12,21 @@ ejecutarla. **Todavía no fue aplicada en Supabase compartido**. Si falta, alta 
 edición responden 503. El frontend administrativo corresponde a otra tarea del equipo.
 
 La base actual guarda `price` y `offer_price` en `products`; las variantes solo
-tienen stock. Por eso la oferta se edita con PUT del producto. PATCH de variante
+tienen stock. Por eso la oferta se edita con PATCH del producto (o PUT completo). PATCH de variante
 rechaza campos de precio: no se inventaron columnas ni se cambió el esquema de Gabriel.
 
 ## Crear y editar
+
+- `GET /api/admin/products`: listado paginado de todos los productos, activos y dados
+  de baja. Solo administradores. Acepta los mismos filtros, búsqueda, orden y
+  parámetros `page`/`limit` del catálogo público; devuelve `{ items, total, page, pages }`.
+- `GET /api/admin/products/:id`: detalle por ID, también para productos inactivos,
+  con categoría y variantes. Permite editar y reactivar un producto dado de baja.
+  Devuelve 404 si no existe y 400 si el ID no es válido.
+
+Ambas lecturas requieren token válido y rol `admin` (401 sin sesión, 403 con comprador).
+`GET /api/products` y `GET /api/products/:slug` siguen mostrando solo productos activos;
+no se puede habilitar la lectura de inactivos mediante parámetros públicos.
 
 - `POST /api/admin/products`: 201. Todas las variantes deben ser nuevas, sin `id`.
 - `PUT /api/admin/products/:id`: 200. Reemplaza los campos del producto; no es PATCH.
@@ -60,7 +71,12 @@ puede convertirse a producto común mediante este endpoint.
 - `DELETE /api/admin/products/:id`: 200 con `{ "id": 1, "active": false }`.
   Baja lógica; conserva variantes, componentes y referencias. Repetirla es seguro.
 - `PATCH /api/admin/variants/:id`: cuerpo `{ "stock": 5 }`; 200 con la variante.
-  No acepta precio ni oferta. Para ofertas usar PUT del producto.
+  No acepta precio ni oferta.
+- `PATCH /api/admin/products/:id`: cuerpo `{ "offer_price": 100 }`; modifica solo
+  la oferta del producto, sin tocar stock ni otros campos. `null` elimina la oferta;
+  `0` es válido. Rechaza negativos, más de dos decimales y ofertas superiores al
+  precio normal. Devuelve `{ "id": "1", "price": 150, "offer_price": 100 }`.
+  El CHECK existente de PostgreSQL valida el precio en el mismo UPDATE; no requiere migraciones.
 
 ## Imágenes
 

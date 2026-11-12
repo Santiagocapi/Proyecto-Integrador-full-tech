@@ -17,6 +17,16 @@ function fail(error) {
 }
 
 export const adminProductsService = {
+  async getById(id) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(id, name, slug), product_variants(id, name, sku, stock)')
+      .eq('id', id)
+      .maybeSingle()
+    fail(error)
+    if (!data) throw Object.assign(new Error('Producto no encontrado'), { status: 404 })
+    return data
+  },
   async save(id, payload) {
     if (!id && payload.variants.some((variant) => variant.id)) {
       throw Object.assign(new Error('Las variantes nuevas no deben tener id'), { status: 400 })
@@ -49,6 +59,21 @@ export const adminProductsService = {
     fail(error)
     if (!data) throw Object.assign(new Error('Variante no encontrada'), { status: 404 })
     return data
+  },
+  async offer(id, payload) {
+    // El CHECK de products valida oferta <= precio con los valores actuales de la fila.
+    const { data, error } = await supabase
+      .from('products')
+      .update(payload)
+      .eq('id', id)
+      .select('id, price, offer_price')
+      .maybeSingle()
+    if (error?.code === '23514') {
+      throw Object.assign(new Error('La oferta no puede superar el precio normal'), { status: 400 })
+    }
+    fail(error)
+    if (!data) throw Object.assign(new Error('Producto no encontrado'), { status: 404 })
+    return { ...data, id: String(data.id) }
   },
   async upload(file) {
     const bytes = file.buffer

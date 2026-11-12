@@ -1,14 +1,15 @@
 import { supabase } from '../config/supabase.js'
 
 export const productsService = {
-  async list({ page = 1, limit = 10, category, minPrice, maxPrice, connection, compat, q, sort }) {
+  async list(
+    { page = 1, limit = 10, category, minPrice, maxPrice, connection, compat, q, sort },
+    { includeInactive = false } = {},
+  ) {
     const from = (page - 1) * limit
     const to = from + limit - 1
 
-    let query = supabase
-      .from('products')
-      .select(
-        `
+    let query = supabase.from('products').select(
+      `
           id,
           name,
           slug,
@@ -19,16 +20,25 @@ export const productsService = {
           compatibility,
           images,
           is_bundle,
+          active,
           created_at,
           categories!inner (
             id,
             name,
             slug
+          ),
+          product_variants (
+            id,
+            name,
+            sku,
+            stock
           )
         `,
-        { count: 'exact' },
-      )
-      .eq('active', true)
+      { count: 'exact' },
+    )
+
+    // Solo el router protegido de administración pasa esta opción interna.
+    if (!includeInactive) query = query.eq('active', true)
 
     // Filtrar por categoría
     if (category) {
@@ -52,7 +62,13 @@ export const productsService = {
 
     // compatibility es un array TEXT[] en PostgreSQL
     if (compat) {
-      query = query.contains('compatibility', [compat])
+      query = query.contains(
+        'compatibility',
+        compat
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      )
     }
 
     // Buscar por nombre o descripción
@@ -119,6 +135,7 @@ export const productsService = {
           specs,
           images,
           is_bundle,
+          active,
           created_at,
           categories (
             id,
