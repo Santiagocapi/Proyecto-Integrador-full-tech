@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 💻 FULL-TECH
 ### E-commerce | Tecnología y accesorios
 
@@ -80,54 +79,6 @@ La aplicación permite explorar productos, consultar sus características, gesti
 | Proyecto | FULL-TECH |
 
 ---
-
-<p align="center">
-  <strong>FULL-TECH</strong><br>
-  Proyecto académico · UTN FRSR
-  <br><br>
-  <sub>Desarrollado en equipo, aplicando conocimientos de programación y desarrollo web.</sub>
-</p>
-=======
-# FULLTECH
-
-## Ctrl C Ctrl V 404 Not Found
-
-Proyecto Integrador para la materia **Programación IV** de la Tecnicatura Universitaria en Programación.
-
-FULLTECH es una plataforma de comercio electrónico orientada a la venta de productos tecnológicos, accesorios y kits especializados de audio, iluminación, video y soportes.
-
-## Tecnologías utilizadas
-
-### Frontend
-
-- Vue 3
-- Vite
-- Vue Router
-- Pinia
-- JavaScript
-- CSS
-
-### Backend
-
-- Node.js
-- Express
-- Zod
-- Supabase
-
-### Base de datos y servicios
-
-- PostgreSQL
-- Supabase Auth
-- Supabase Storage
-
-### Herramientas
-
-- Git y GitHub
-- Vitest
-- ESLint
-- Prettier
-- Render
-- Vercel
 
 ## Requisitos previos
 
@@ -363,16 +314,3 @@ Variables de entorno necesarias:
 URL de producción:
 
 https://proyecto-integrador-full-tech.vercel.app
-
-## Integrantes
-
-- Aymar Stéfano
-- Capitani Santiago
-- Lucero Rocío
-- Gabriel Jauregui
-- Martinez Trejo Gustavo
-- Mendoza Dolores
-- Mulinetti Delfina
-- Andrea Vargas
-- Zanatta Hugo
->>>>>>> origin/develop
